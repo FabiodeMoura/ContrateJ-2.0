@@ -13,9 +13,11 @@ const CORES: Record<string, string> = {
 export default function SeletorStatus({
   candidatoId,
   statusAtual,
+  recomendacao,
 }: {
   candidatoId: string
   statusAtual: string
+  recomendacao?: string | null
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -25,16 +27,29 @@ export default function SeletorStatus({
     router.refresh()
   }
 
+  const mostrarAtalho = statusAtual === 'Em análise' && recomendacao === 'Recomendado'
+
   return (
-    <select
-      defaultValue={statusAtual}
-      onChange={(e) => mudarStatus(e.target.value)}
-      className={`text-xs rounded-full px-2.5 py-1 border-0 font-medium ${CORES[statusAtual] ?? ''}`}
-    >
-      <option value="Em análise">Em análise</option>
-      <option value="Entrevistado">Entrevistado</option>
-      <option value="Aprovado">Aprovado</option>
-      <option value="Reprovado">Reprovado</option>
-    </select>
+    <div className="flex flex-col gap-1.5 items-start">
+      <select
+        defaultValue={statusAtual}
+        onChange={(e) => mudarStatus(e.target.value)}
+        className={`text-xs rounded-full px-2.5 py-1 border-0 font-medium ${CORES[statusAtual] ?? ''}`}
+      >
+        <option value="Em análise">Em análise</option>
+        <option value="Entrevistado">Entrevistado</option>
+        <option value="Aprovado">Aprovado</option>
+        <option value="Reprovado">Reprovado</option>
+      </select>
+
+      {mostrarAtalho && (
+        <button
+          onClick={() => mudarStatus('Entrevistado')}
+          className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition"
+        >
+          Seguir para entrevista →
+        </button>
+      )}
+    </div>
   )
 }

@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabaseServer'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import LogoutButton from './LogoutButton'
+import NovaEmpresaButton from './NovaEmpresaButton'
 
 const SEGMENTOS_INFO: Record<string, { emoji: string; cor: string }> = {
   Restaurante: { emoji: '🍽️', cor: 'from-orange-400 to-orange-600' },
@@ -25,11 +26,38 @@ export default async function DashboardPage() {
 
   const empresaAtual = empresas?.[0]
 
-  const { count: vagasAtivas } = await supabase
+  const { data: vagasDaEmpresa } = await supabase
     .from('vagas')
-    .select('id', { count: 'exact', head: true })
+    .select('id, status')
     .eq('empresa_id', empresaAtual?.id)
-    .eq('status', 'Ativa')
+
+  const vagaIds = vagasDaEmpresa?.map((v) => v.id) ?? []
+  const vagasAtivas = vagasDaEmpresa?.filter((v) => v.status === 'Ativa').length ?? 0
+
+  const { data: candidatosDaEmpresa } = await supabase
+    .from('candidatos')
+    .select('status, percentual_aderencia')
+    .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
+
+  const totalCandidatos = candidatosDaEmpresa?.length ?? 0
+  const contar = (status: string) => candidatosDaEmpresa?.filter((c) => c.status === status).length ?? 0
+
+  const aderencias = candidatosDaEmpresa
+    ?.map((c) => c.percentual_aderencia)
+    .filter((v): v is number => v != null) ?? []
+  const aderenciaMedia = aderencias.length
+    ? Math.round(aderencias.reduce((a, b) => a + b, 0) / aderencias.length)
+    : null
+
+  const CARDS = [
+    { label: 'Vagas ativas', valor: vagasAtivas, icone: '💼', cor: 'text-indigo-600 bg-indigo-50' },
+    { label: 'Candidatos avaliados', valor: totalCandidatos, icone: '🧑‍🤝‍🧑', cor: 'text-slate-600 bg-slate-100' },
+    { label: 'Em análise', valor: contar('Em análise'), icone: '⏳', cor: 'text-gray-600 bg-gray-100' },
+    { label: 'Entrevistados', valor: contar('Entrevistado'), icone: '🗣️', cor: 'text-blue-600 bg-blue-50' },
+    { label: 'Aprovados', valor: contar('Aprovado'), icone: '✅', cor: 'text-green-600 bg-green-50' },
+    { label: 'Reprovados', valor: contar('Reprovado'), icone: '⛔', cor: 'text-red-600 bg-red-50' },
+    { label: 'Aderência média', valor: aderenciaMedia != null ? `${aderenciaMedia}%` : '—', icone: '📊', cor: 'text-purple-600 bg-purple-50' },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -49,6 +77,7 @@ export default async function DashboardPage() {
               ))}
             </select>
           )}
+          <NovaEmpresaButton />
           <LogoutButton />
         </div>
       </header>
@@ -70,23 +99,17 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        <div className="bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-xl p-4">
-          <p className="text-xs opacity-90">Vagas Ativas</p>
-          <p className="text-2xl font-bold">{vagasAtivas ?? 0}</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-400 to-green-600 text-white rounded-xl p-4">
-          <p className="text-xs opacity-90">Candidatos Recebidos</p>
-          <p className="text-2xl font-bold">—</p>
-        </div>
-        <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-xl p-4">
-          <p className="text-xs opacity-90">Contratações</p>
-          <p className="text-2xl font-bold">—</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-400 to-purple-600 text-white rounded-xl p-4">
-          <p className="text-xs opacity-90">Aderência Média</p>
-          <p className="text-2xl font-bold">—</p>
-        </div>
+      {/* Cards de indicadores — visual clean, sem gradiente pesado */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        {CARDS.map((card) => (
+          <div key={card.label} className="bg-white rounded-xl border p-4">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-2 ${card.cor}`}>
+              {card.icone}
+            </div>
+            <p className="text-xl font-semibold text-gray-800">{card.valor}</p>
+            <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{card.label}</p>
+          </div>
+        ))}
       </section>
 
       <p className="text-sm font-medium mb-3">Segmentos</p>
