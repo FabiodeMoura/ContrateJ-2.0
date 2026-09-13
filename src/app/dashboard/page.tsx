@@ -2,7 +2,6 @@ import { createServerSupabase } from '@/lib/supabaseServer'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import LogoutButton from './LogoutButton'
-import NovaEmpresaButton from './NovaEmpresaButton'
 
 const SEGMENTOS_INFO: Record<string, { emoji: string; cor: string }> = {
   Restaurante: { emoji: '🍽️', cor: 'from-orange-400 to-orange-600' },
@@ -77,7 +76,6 @@ export default async function DashboardPage() {
               ))}
             </select>
           )}
-          <NovaEmpresaButton />
           <LogoutButton />
         </div>
       </header>
