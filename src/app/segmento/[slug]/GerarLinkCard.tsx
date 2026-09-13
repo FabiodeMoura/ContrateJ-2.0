@@ -6,11 +6,13 @@ import { createClient } from '@/lib/supabaseClient'
 export default function GerarLinkCard({
   perfilId,
   funcao,
+  icone,
   empresaId,
   nomeEmpresa,
 }: {
   perfilId: string
   funcao: string
+  icone: string
   empresaId: string
   nomeEmpresa: string
 }) {
@@ -41,23 +43,31 @@ export default function GerarLinkCard({
     setLink(`${baseUrl}/avaliar/${data.token_link}`)
   }
 
+  function mensagemPadrao() {
+    return `Olá! Você foi convidado a participar do processo seletivo de ${funcao} na ${nomeEmpresa}. Acesse o link para responder a avaliação: ${link}`
+  }
+
   function copiarLink() {
     if (!link) return
-    navigator.clipboard.writeText(link)
-    alert('Link copiado!')
+    navigator.clipboard.writeText(mensagemPadrao())
+    alert('Mensagem copiada!')
   }
 
   function enviarWhatsapp() {
     if (!link) return
-    const texto = `Olá! Você foi convidado a participar do processo seletivo de ${funcao} na ${nomeEmpresa}. Acesse o link para responder a avaliação: ${link}`
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensagemPadrao())}`, '_blank')
   }
 
   return (
     <div className="bg-white rounded-xl border p-4 flex flex-col gap-3">
-      <div>
-        <p className="font-medium text-sm">{funcao}</p>
-        <p className="text-xs text-gray-400">Avaliação comportamental DISC</p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-lg shrink-0">
+          {icone}
+        </div>
+        <div>
+          <p className="font-medium text-sm">{funcao}</p>
+          <p className="text-xs text-gray-400">Avaliação comportamental DISC</p>
+        </div>
       </div>
 
       {!link ? (

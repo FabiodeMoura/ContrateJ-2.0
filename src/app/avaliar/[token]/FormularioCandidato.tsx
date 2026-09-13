@@ -19,31 +19,46 @@ export default function FormularioCandidato({
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   async function iniciar(e: React.FormEvent) {
     e.preventDefault()
     setCarregando(true)
+    setErro(null)
 
-    const { data, error } = await supabase
-      .from('candidatos')
-      .insert({
-        vaga_id: vagaId,
-        nome_completo: nome,
-        email,
-        whatsapp,
-      })
-      .select('id')
-      .single()
+    try {
+      // Gera o ID no próprio navegador: candidatos anônimos podem CRIAR
+      // o próprio registro (RLS), mas não podem LER de volta o que criaram,
+      // então não dá pra depender de ".select().single()" pra pegar o ID.
+      const candidatoId = crypto.randomUUID()
 
-    setCarregando(false)
-    if (error || !data) {
-      alert('Não foi possível iniciar a avaliação. Tente novamente.')
-      return
+      const { error } = await supabase
+        .from('candidatos')
+        .insert({
+          id: candidatoId,
+          vaga_id: vagaId,
+          nome_completo: nome,
+          email,
+          whatsapp,
+        })
+
+      setCarregando(false)
+
+      if (error) {
+        // Mostra o motivo real (RLS, campo obrigatório, etc.) em vez de um alerta genérico
+        setErro(error.message ?? 'Não foi possível iniciar a avaliação. Tente novamente.')
+        console.error('Erro ao criar candidato:', error)
+        return
+      }
+
+      router.push(`/quiz/${token}?candidato=${candidatoId}`)
+    } catch (e) {
+      setCarregando(false)
+      setErro('Erro de conexão. Verifique sua internet e tente novamente.')
+      console.error('Erro inesperado ao iniciar avaliação:', e)
     }
-
-    router.push(`/quiz/${token}?candidato=${data.id}`)
   }
 
   return (
@@ -87,6 +102,9 @@ export default function FormularioCandidato({
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
           />
+          {erro && (
+            <p className="text-red-600 text-xs bg-red-50 rounded-md px-3 py-2">{erro}</p>
+          )}
           <button
             disabled={carregando}
             className="w-full bg-indigo-600 text-white rounded-md py-2.5 text-sm font-medium disabled:opacity-60"

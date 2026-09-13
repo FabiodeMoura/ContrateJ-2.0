@@ -75,12 +75,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Lado esquerdo — branding */}
-      <div className="hidden md:flex md:flex-1 bg-gradient-to-br from-indigo-950 via-indigo-700 to-purple-700 text-white p-10 flex-col justify-between">
-        <div className="flex items-center gap-2">
+      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-800 to-purple-800 text-white p-10 flex-col justify-between">
+        <img
+          src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=60"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-900/60 to-purple-900/50" />
+
+        <div className="relative flex items-center gap-2">
           <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">💼</div>
           <span className="font-semibold text-lg">ContrateJá</span>
         </div>
-        <div>
+        <div className="relative">
           <h1 className="text-2xl font-semibold mb-3 leading-snug">
             Contrate certo desde a primeira entrevista.
           </h1>
@@ -88,8 +95,16 @@ export default function LoginPage() {
             Avalie o perfil comportamental dos candidatos antes de chamar pra
             entrevista, com testes prontos pro seu segmento.
           </p>
+          <div className="flex gap-2 mt-6">
+            <span className="text-lg">🍽️</span>
+            <span className="text-lg">🍸</span>
+            <span className="text-lg">🍔</span>
+            <span className="text-lg">🍞</span>
+            <span className="text-lg">🥬</span>
+            <span className="text-lg">🍕</span>
+          </div>
         </div>
-        <p className="text-xs text-indigo-200">
+        <p className="relative text-xs text-indigo-200">
           © ContrateJá — Talentos que fazem a diferença no seu negócio
         </p>
       </div>

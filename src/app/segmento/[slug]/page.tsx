@@ -4,6 +4,8 @@ import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import GerarLinkCard from './GerarLinkCard'
 
+// Mapa de segmento -> funções e visual de cada segmento.
+// (Não existe coluna "segmento" em perfis_disc, então o vínculo é feito aqui.)
 const SEGMENTOS: Record<
   string,
   { nome: string; emoji: string; cor: string; funcoes: string[] }
@@ -56,6 +58,32 @@ const SEGMENTOS: Record<
   },
 }
 
+const ICONES_FUNCAO: Record<string, string> = {
+  'Açougueiro': '🥩',
+  'Analista Fiscal': '📊',
+  'Atendente': '🙋',
+  'Atendente/Repositor': '🛒',
+  'Auxiliar de Cozinha': '🔪',
+  'Bartender': '🍸',
+  'Caixa': '💳',
+  'Chapeiro': '🍔',
+  'Confeiteiro': '🎂',
+  'Cozinheiro': '👨‍🍳',
+  'Financeiro': '💰',
+  'Garçom': '🍴',
+  'Gerente': '👔',
+  'Motoboy/Entregador': '🛵',
+  'Motorista': '🚚',
+  'Padeiro': '🥖',
+  'Pizzaiolo': '🍕',
+  'Recepcionista': '📋',
+  'Repositor': '📦',
+  'Segurança': '🛡️',
+  'Serviços Gerais': '🧹',
+  'Subgerente': '🗂️',
+  'Supervisor de Operações': '📈',
+}
+
 export default async function SegmentoPage({
   params,
   searchParams,
@@ -84,6 +112,7 @@ export default async function SegmentoPage({
     .select('id, funcao')
     .in('funcao', segmento.funcoes)
 
+  // mantém a ordem definida acima (não a ordem alfabética que vem do banco)
   const perfisOrdenados = segmento.funcoes
     .map((f) => perfis?.find((p) => p.funcao === f))
     .filter((p): p is { id: string; funcao: string } => !!p)
@@ -114,6 +143,7 @@ export default async function SegmentoPage({
               key={perfil.id}
               perfilId={perfil.id}
               funcao={perfil.funcao}
+              icone={ICONES_FUNCAO[perfil.funcao] ?? '💼'}
               empresaId={empresaId ?? ''}
               nomeEmpresa={empresaAtual?.nome_fantasia ?? ''}
             />
