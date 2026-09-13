@@ -75,7 +75,7 @@ export default async function DashboardPage() {
         {Object.entries(SEGMENTOS_INFO).map(([nome, info]) => (
           <Link
             key={nome}
-            href="/vagas"
+            href={`/segmento/${nome.toLowerCase()}`}
             className={`bg-gradient-to-br ${info.cor} text-white rounded-xl p-4 text-center hover:opacity-90 transition`}
           >
             <div className="text-2xl mb-1">{info.emoji}</div>
