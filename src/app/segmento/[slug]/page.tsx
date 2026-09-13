@@ -4,7 +4,7 @@ import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import GerarLinkCard from './GerarLinkCard'
 
-const SEGMENTOS: Record
+const SEGMENTOS: Record<
   string,
   { nome: string; emoji: string; cor: string; funcoes: string[] }
 > = {
