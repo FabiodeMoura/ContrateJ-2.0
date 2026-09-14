@@ -93,31 +93,39 @@ export default async function DashboardPage() {
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
         {/* Banner */}
-        <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-indigo-950 via-indigo-800 to-purple-800 text-white">
-          <img
-            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=60"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-25"
-          />
-          <div className="relative p-6 md:p-8 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-xl md:text-2xl font-semibold mb-1">
-                Olá, {empresaAtual?.nome_fantasia ?? 'sua empresa'}! 👋
-              </h1>
-              <p className="text-sm text-indigo-100 max-w-md">
-                Aqui você acompanha suas vagas, candidatos e o progresso das suas contratações, tudo em um só lugar.
-              </p>
+        <div className="relative overflow-hidden rounded-2xl mb-6 bg-[#0d1024]">
+          <div className="grid md:grid-cols-[1.3fr_1fr]">
+            <div className="relative z-10 p-5 md:p-8 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">🔔</div>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-xl px-2.5 py-1.5 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-white text-indigo-700 flex items-center justify-center text-[11px] font-bold shrink-0">
+                    {nomeUsuario.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="text-xs leading-tight text-white min-w-0 hidden sm:block">
+                    <p className="font-medium truncate">{nomeUsuario}</p>
+                    <p className="text-indigo-200">Administrador</p>
+                  </div>
+                  <LogoutButton />
+                </div>
+              </div>
+
+              <div>
+                <h1 className="text-xl md:text-2xl font-semibold mb-2 text-white leading-snug">
+                  Olá, {empresaAtual?.nome_fantasia ?? 'sua empresa'}! 👋
+                </h1>
+                <p className="text-sm text-indigo-100 max-w-sm">
+                  Aqui você acompanha suas vagas, candidatos e o progresso das suas contratações, tudo em um só lugar.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur rounded-xl px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">🔔</div>
-              <div className="w-8 h-8 rounded-full bg-white text-indigo-700 flex items-center justify-center text-xs font-bold">
-                {nomeUsuario.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="text-xs leading-tight">
-                <p className="font-medium">{nomeUsuario}</p>
-                <p className="text-indigo-200">Administrador</p>
-              </div>
-              <LogoutButton />
+            <div className="relative hidden md:block min-h-[10rem]">
+              <img
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=70"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0d1024] via-[#0d1024]/40 to-transparent" />
             </div>
           </div>
         </div>

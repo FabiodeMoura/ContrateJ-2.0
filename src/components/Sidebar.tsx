@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import NovaEmpresaButton from './NovaEmpresaButton'
+import { MARCA, fraseDoDia } from '@/lib/frases'
 
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -15,10 +16,10 @@ export default function Sidebar({ ativo }: { ativo: string }) {
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm">
           💼
         </div>
-        <span className="font-semibold text-sm">ContrateJá</span>
+        <span className="font-semibold text-sm">{MARCA.nome}</span>
       </div>
       <p className="text-[11px] text-gray-400 px-1 mb-5 leading-tight">
-        Talentos que fazem a diferença no seu negócio
+        {MARCA.tagline}
       </p>
 
       {ITENS.map((item) => (
@@ -36,15 +37,15 @@ export default function Sidebar({ ativo }: { ativo: string }) {
       <NovaEmpresaButton />
 
       {/* painel decorativo — pessoas/recrutamento, sem imagens de comida */}
-      <div className="mt-auto relative rounded-xl overflow-hidden h-40">
+      <div className="mt-auto relative rounded-xl overflow-hidden min-h-[10rem]">
         <img
           src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=400&q=60"
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-        <p className="absolute bottom-3 left-3 right-3 text-xs text-white/90 italic leading-snug">
-          "Grandes resultados começam com boas contratações."
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+        <p className="relative p-4 text-sm text-white font-medium italic leading-snug">
+          "{fraseDoDia()}"
         </p>
       </div>
     </aside>

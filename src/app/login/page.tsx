@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import { MARCA, VALORES_LOGIN } from '@/lib/frases'
 
 const SEGMENTOS = ['Restaurante', 'Bar', 'Lanchonete', 'Padaria', 'Sacolão', 'Pizzaria']
 
@@ -77,7 +78,7 @@ export default function LoginPage() {
       {/* Lado esquerdo — branding */}
       <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-800 to-purple-800 text-white p-10 flex-col justify-between">
         <img
-          src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=60"
+          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=70"
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-30"
         />
@@ -85,27 +86,29 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-2">
           <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">💼</div>
-          <span className="font-semibold text-lg">ContrateJá</span>
+          <span className="font-semibold text-lg">{MARCA.nome}</span>
         </div>
         <div className="relative">
           <h1 className="text-2xl font-semibold mb-3 leading-snug">
-            Contrate certo desde a primeira entrevista.
+            {MARCA.missao}
           </h1>
           <p className="text-sm text-indigo-100 max-w-sm">
             Avalie o perfil comportamental dos candidatos antes de chamar pra
             entrevista, com testes prontos pro seu segmento.
           </p>
-          <div className="flex gap-2 mt-6">
-            <span className="text-lg">🍽️</span>
-            <span className="text-lg">🍸</span>
-            <span className="text-lg">🍔</span>
-            <span className="text-lg">🍞</span>
-            <span className="text-lg">🥬</span>
-            <span className="text-lg">🍕</span>
+          <div className="flex flex-col gap-2.5 mt-6">
+            {VALORES_LOGIN.map((v) => (
+              <div key={v.texto} className="flex items-center gap-2.5 text-sm text-indigo-100">
+                <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">
+                  {v.icone}
+                </span>
+                {v.texto}
+              </div>
+            ))}
           </div>
         </div>
         <p className="relative text-xs text-indigo-200">
-          © ContrateJá — Talentos que fazem a diferença no seu negócio
+          © {MARCA.nome} — {MARCA.tagline}
         </p>
       </div>
 

@@ -34,7 +34,7 @@ export default async function VagasPage({
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar ativo="/vagas" />
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
           <div>
             <h1 className="text-lg font-semibold">Vagas</h1>
             <p className="text-xs text-gray-500">
@@ -42,7 +42,7 @@ export default async function VagasPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
             {empresas && empresas.length > 1 && (
               <form>
                 <select

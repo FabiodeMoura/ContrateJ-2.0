@@ -40,7 +40,7 @@ export default async function CandidatosPage({
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar ativo="/candidatos" />
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
           <div>
             <h1 className="text-lg font-semibold">Candidatos</h1>
             <p className="text-xs text-gray-500">

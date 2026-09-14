@@ -36,7 +36,7 @@ export default function NovaVagaButton({
     <>
       <button
         onClick={() => setAberto(true)}
-        className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5"
+        className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 w-full sm:w-auto"
       >
         + Nova vaga
       </button>

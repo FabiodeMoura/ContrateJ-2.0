@@ -36,7 +36,7 @@ export default function ExportarExcelButton({ candidatos }: { candidatos: Candid
   return (
     <button
       onClick={exportar}
-      className="border bg-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5"
+      className="border bg-white text-sm font-medium px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 w-full md:w-auto"
     >
       📊 Exportar para Excel
     </button>
