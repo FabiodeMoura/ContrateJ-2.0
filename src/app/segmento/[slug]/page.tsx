@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import GerarLinkCard from './GerarLinkCard'
+import EmpresaSelector from '@/components/EmpresaSelector'
 
 // Mapa de segmento -> funções e visual de cada segmento.
 // (Não existe coluna "segmento" em perfis_disc, então o vínculo é feito aqui.)
@@ -121,14 +122,26 @@ export default async function SegmentoPage({
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
-        <div className={`bg-gradient-to-br ${segmento.cor} text-white rounded-2xl p-6 mb-6 flex items-center gap-4`}>
-          <div className="text-4xl">{segmento.emoji}</div>
-          <div>
-            <h1 className="text-xl font-semibold">{segmento.nome}</h1>
-            <p className="text-sm opacity-90">
-              {empresaAtual?.nome_fantasia ?? 'Selecione uma empresa'} · Escolha a função e gere o link de avaliação
-            </p>
+        <div className={`bg-gradient-to-br ${segmento.cor} text-white rounded-2xl p-6 mb-6 flex flex-wrap items-center justify-between gap-4`}>
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">{segmento.emoji}</div>
+            <div>
+              <h1 className="text-xl font-semibold">{segmento.nome}</h1>
+              <p className="text-sm opacity-90">
+                Escolha a função e gere o link de avaliação
+              </p>
+            </div>
           </div>
+          {empresas && empresas.length > 1 ? (
+            <div className="flex flex-col items-start sm:items-end gap-1">
+              <span className="text-[11px] uppercase tracking-wide opacity-80">Gerando vaga para</span>
+              <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
+            </div>
+          ) : empresaAtual ? (
+            <span className="text-sm font-medium bg-white/15 rounded-lg px-3 py-1.5">
+              {empresaAtual.nome_fantasia}
+            </span>
+          ) : null}
         </div>
 
         {!empresaId && (

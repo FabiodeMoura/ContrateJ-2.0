@@ -6,6 +6,7 @@ import MobileNav from '@/components/MobileNav'
 import StatusBadge from '@/components/StatusBadge'
 import AvatarIniciais from '@/components/AvatarIniciais'
 import LogoutButton from './LogoutButton'
+import EmpresaSelector from '@/components/EmpresaSelector'
 
 const SEGMENTOS_INFO: Record<string, { emoji: string; cor: string }> = {
   Restaurante: { emoji: '🍽️', cor: 'from-orange-400 to-orange-600' },
@@ -27,7 +28,11 @@ function tempoRelativo(data: string) {
   return `há ${d} dias`
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { empresa?: string }
+}) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -39,12 +44,17 @@ export default async function DashboardPage() {
     .select('id, nome_fantasia, segmento_principal')
     .eq('dono_id', user.id)
 
-  const empresaAtual = empresas?.[0]
+  const temVariasEmpresas = (empresas?.length ?? 0) > 1
+  const filtroEmpresa = searchParams.empresa ?? (temVariasEmpresas ? 'todas' : empresas?.[0]?.id) ?? 'todas'
+  const empresaIds = filtroEmpresa === 'todas'
+    ? (empresas?.map((e) => e.id) ?? [])
+    : [filtroEmpresa]
+  const empresaAtual = filtroEmpresa === 'todas' ? undefined : empresas?.find((e) => e.id === filtroEmpresa)
 
   const { data: vagasComCandidatos } = await supabase
     .from('vagas')
     .select('id, funcao, status, criado_em, candidatos ( id, status, percentual_aderencia )')
-    .eq('empresa_id', empresaAtual?.id ?? '00000000-0000-0000-0000-000000000000')
+    .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
     .order('criado_em', { ascending: false })
 
   const vagasAtivas = vagasComCandidatos?.filter((v) => v.status === 'Ativa').length ?? 0
@@ -60,7 +70,7 @@ export default async function DashboardPage() {
   const { data: candidatosRecentes } = await supabase
     .from('candidatos')
     .select('id, nome_completo, email, status, criado_em, vagas!inner ( funcao, empresa_id )')
-    .eq('vagas.empresa_id', empresaAtual?.id ?? '00000000-0000-0000-0000-000000000000')
+    .in('vagas.empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
     .order('criado_em', { ascending: false })
     .limit(5)
 
@@ -126,7 +136,7 @@ export default async function DashboardPage() {
 
             <div>
               <h1 className="text-xl md:text-2xl font-semibold mb-2 text-white leading-snug">
-                Olá, {empresaAtual?.nome_fantasia ?? 'sua empresa'}! 👋
+                Olá, {empresaAtual?.nome_fantasia ?? nomeUsuario}! 👋
               </h1>
               <p className="text-sm text-indigo-100 max-w-sm">
                 Aqui você acompanha suas vagas, candidatos e o progresso das suas contratações, tudo em um só lugar.
@@ -151,6 +161,12 @@ export default async function DashboardPage() {
         </section>
 
         {/* Cards */}
+        {empresas && empresas.length > 1 && (
+          <div className="flex items-center justify-between mb-3 mt-8">
+            <p className="text-sm font-medium">Indicadores</p>
+            <EmpresaSelector empresas={empresas} valorAtual={filtroEmpresa} incluirTodas />
+          </div>
+        )}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {CARDS.map((card) => (
             <div key={card.label} className="bg-white rounded-2xl border p-4">
