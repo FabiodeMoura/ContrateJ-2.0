@@ -3,32 +3,40 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 
+interface Empresa {
+  id: string
+  nome_fantasia: string
+}
+
 export default function GerarLinkCard({
   perfilId,
   funcao,
   icone,
-  empresaId,
-  nomeEmpresa,
+  empresas,
+  empresaIdPadrao,
 }: {
   perfilId: string
   funcao: string
   icone: string
-  empresaId: string
-  nomeEmpresa: string
+  empresas: Empresa[]
+  empresaIdPadrao: string
 }) {
+  const [empresaEscolhida, setEmpresaEscolhida] = useState(empresaIdPadrao)
   const [carregando, setCarregando] = useState(false)
   const [link, setLink] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const supabase = createClient()
 
+  const nomeEmpresaEscolhida = empresas.find((e) => e.id === empresaEscolhida)?.nome_fantasia ?? ''
+
   async function gerarLink() {
-    if (!empresaId) return
+    if (!empresaEscolhida) return
     setCarregando(true)
     setErro(null)
 
     const { data, error } = await supabase
       .from('vagas')
-      .insert({ empresa_id: empresaId, perfil_disc_id: perfilId, funcao })
+      .insert({ empresa_id: empresaEscolhida, perfil_disc_id: perfilId, funcao })
       .select('token_link')
       .single()
 
@@ -44,7 +52,7 @@ export default function GerarLinkCard({
   }
 
   function mensagemPadrao() {
-    return `Olá! Você foi convidado a participar do processo seletivo de ${funcao} na ${nomeEmpresa}. Acesse o link para responder a avaliação: ${link}`
+    return `Olá! Você foi convidado a participar do processo seletivo de ${funcao} na ${nomeEmpresaEscolhida}. Acesse o link para responder a avaliação: ${link}`
   }
 
   function copiarLink() {
@@ -71,15 +79,32 @@ export default function GerarLinkCard({
       </div>
 
       {!link ? (
-        <button
-          onClick={gerarLink}
-          disabled={carregando || !empresaId}
-          className="bg-indigo-600 text-white text-sm font-medium rounded-lg py-2 disabled:opacity-60"
-        >
-          {carregando ? 'Gerando...' : 'Gerar link'}
-        </button>
+        <>
+          {empresas.length > 1 && (
+            <div>
+              <label className="text-[11px] text-gray-500 mb-1 block">Gerar para qual empresa?</label>
+              <select
+                value={empresaEscolhida}
+                onChange={(e) => setEmpresaEscolhida(e.target.value)}
+                className="w-full border rounded-lg px-2.5 py-1.5 text-xs"
+              >
+                {empresas.map((e) => (
+                  <option key={e.id} value={e.id}>{e.nome_fantasia}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={gerarLink}
+            disabled={carregando || !empresaEscolhida}
+            className="bg-indigo-600 text-white text-sm font-medium rounded-lg py-2 disabled:opacity-60"
+          >
+            {carregando ? 'Gerando...' : 'Gerar link'}
+          </button>
+        </>
       ) : (
         <div className="flex flex-col gap-2">
+          <p className="text-[11px] text-gray-400">Empresa: <span className="font-medium text-gray-600">{nomeEmpresaEscolhida}</span></p>
           <p className="text-xs text-green-700 bg-green-50 rounded-lg px-2 py-1.5 break-all">
             {link}
           </p>

@@ -4,6 +4,9 @@ import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import NovaVagaButton from './NovaVagaButton'
 import AcoesVaga from './AcoesVaga'
+import EmpresaSelector from '@/components/EmpresaSelector'
+import Link from 'next/link'
+import { SEGMENTOS_INFO } from '@/lib/segmentos'
 
 export default async function VagasPage({
   searchParams,
@@ -44,17 +47,7 @@ export default async function VagasPage({
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
             {empresas && empresas.length > 1 && (
-              <form>
-                <select
-                  name="empresa"
-                  defaultValue={empresaId}
-                  className="border rounded-lg px-3 py-2 text-sm bg-white"
-                >
-                  {empresas.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nome_fantasia}</option>
-                  ))}
-                </select>
-              </form>
+              <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
             )}
             {empresaId && perfis && (
               <NovaVagaButton empresaId={empresaId} perfis={perfis} />
@@ -62,6 +55,21 @@ export default async function VagasPage({
           </div>
         </div>
 
+        <p className="text-sm font-medium mb-3">Criar vaga por segmento</p>
+        <section className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
+          {Object.entries(SEGMENTOS_INFO).map(([nome, info]) => (
+            <Link
+              key={nome}
+              href={`/segmento/${nome.toLowerCase()}`}
+              className={`bg-gradient-to-br ${info.cor} text-white rounded-xl p-4 text-center hover:opacity-90 hover:scale-[1.03] transition shadow-sm`}
+            >
+              <div className="text-2xl mb-1">{info.emoji}</div>
+              <p className="text-xs font-semibold">{nome}</p>
+            </Link>
+          ))}
+        </section>
+
+        <p className="text-sm font-medium mb-3">Todas as vagas</p>
         <div className="bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

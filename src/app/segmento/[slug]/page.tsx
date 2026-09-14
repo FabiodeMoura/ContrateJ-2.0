@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import GerarLinkCard from './GerarLinkCard'
-import EmpresaSelector from '@/components/EmpresaSelector'
 
 // Mapa de segmento -> funções e visual de cada segmento.
 // (Não existe coluna "segmento" em perfis_disc, então o vínculo é feito aqui.)
@@ -105,9 +104,6 @@ export default async function SegmentoPage({
     .select('id, nome_fantasia')
     .eq('dono_id', user.id)
 
-  const empresaId = searchParams.empresa ?? empresas?.[0]?.id
-  const empresaAtual = empresas?.find((e) => e.id === empresaId)
-
   const { data: perfis } = await supabase
     .from('perfis_disc')
     .select('id, funcao')
@@ -120,7 +116,7 @@ export default async function SegmentoPage({
 
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
-      <Sidebar ativo="/dashboard" />
+      <Sidebar ativo="/vagas" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
         <div className={`bg-gradient-to-br ${segmento.cor} text-white rounded-2xl p-6 mb-6 flex flex-wrap items-center justify-between gap-4`}>
           <div className="flex items-center gap-4">
@@ -132,19 +128,14 @@ export default async function SegmentoPage({
               </p>
             </div>
           </div>
-          {empresas && empresas.length > 1 ? (
-            <div className="flex flex-col items-start sm:items-end gap-1">
-              <span className="text-[11px] uppercase tracking-wide opacity-80">Gerando vaga para</span>
-              <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
-            </div>
-          ) : empresaAtual ? (
+          {empresas && empresas.length === 1 && (
             <span className="text-sm font-medium bg-white/15 rounded-lg px-3 py-1.5">
-              {empresaAtual.nome_fantasia}
+              {empresas[0].nome_fantasia}
             </span>
-          ) : null}
+          )}
         </div>
 
-        {!empresaId && (
+        {(!empresas || empresas.length === 0) && (
           <p className="text-sm text-gray-500">
             Você ainda não tem uma empresa cadastrada.
           </p>
@@ -157,8 +148,8 @@ export default async function SegmentoPage({
               perfilId={perfil.id}
               funcao={perfil.funcao}
               icone={ICONES_FUNCAO[perfil.funcao] ?? '💼'}
-              empresaId={empresaId ?? ''}
-              nomeEmpresa={empresaAtual?.nome_fantasia ?? ''}
+              empresas={empresas ?? []}
+              empresaIdPadrao={empresas?.[0]?.id ?? ''}
             />
           ))}
           {perfisOrdenados.length === 0 && (

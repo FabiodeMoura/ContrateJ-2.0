@@ -5,6 +5,7 @@ import MobileNav from '@/components/MobileNav'
 import SeletorStatus from './SeletorStatus'
 import RecomendacaoBadge from './RecomendacaoBadge'
 import ExportarExcelButton from './ExportarExcelButton'
+import EmpresaSelector from '@/components/EmpresaSelector'
 
 export default async function CandidatosPage({
   searchParams,
@@ -47,7 +48,12 @@ export default async function CandidatosPage({
               {empresaAtual?.nome_fantasia} • {candidatos?.length ?? 0} candidatos avaliados
             </p>
           </div>
-          <ExportarExcelButton candidatos={candidatos ?? []} />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+            {empresas && empresas.length > 1 && (
+              <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
+            )}
+            <ExportarExcelButton candidatos={candidatos ?? []} />
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border overflow-x-auto">
