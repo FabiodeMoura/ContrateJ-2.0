@@ -99,7 +99,7 @@ export default async function DashboardPage({
     .slice(0, 5)
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
         {/* Banner */}

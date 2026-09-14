@@ -70,7 +70,7 @@ export default async function RelatoriosPage({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/relatorios" />
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
         <div className="mb-4">

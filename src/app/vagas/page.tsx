@@ -31,7 +31,7 @@ export default async function VagasPage({
   const { data: perfis } = await supabase.from('perfis_disc').select('id, funcao').order('funcao')
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/vagas" />
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">

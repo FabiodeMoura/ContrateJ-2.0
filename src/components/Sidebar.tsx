@@ -11,7 +11,7 @@ const ITENS = [
 
 export default function Sidebar({ ativo }: { ativo: string }) {
   return (
-    <aside className="hidden md:flex md:w-56 bg-[#14161a] text-white flex-col p-4 gap-1 shrink-0 sticky top-0 h-screen overflow-y-auto">
+    <aside className="hidden md:flex md:w-56 md:fixed md:inset-y-0 md:left-0 bg-[#14161a] text-white flex-col p-4 gap-1 overflow-y-auto z-10">
       <div className="flex items-center gap-2 mb-1 px-1">
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm">
           💼
