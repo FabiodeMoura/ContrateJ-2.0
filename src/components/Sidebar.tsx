@@ -3,10 +3,10 @@ import NovaEmpresaButton from './NovaEmpresaButton'
 import { MARCA, fraseDoDia } from '@/lib/frases'
 
 const ITENS = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/vagas', label: 'Vagas', icon: '💼' },
-  { href: '/candidatos', label: 'Candidatos', icon: '👥' },
-  { href: '/relatorios', label: 'Relatórios', icon: '📈' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊', cor: 'from-indigo-500 to-indigo-600' },
+  { href: '/vagas', label: 'Vagas', icon: '💼', cor: 'from-blue-500 to-blue-600' },
+  { href: '/candidatos', label: 'Candidatos', icon: '👥', cor: 'from-green-500 to-green-600' },
+  { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-purple-500 to-purple-600' },
 ]
 
 export default function Sidebar({ ativo }: { ativo: string }) {
@@ -26,11 +26,15 @@ export default function Sidebar({ ativo }: { ativo: string }) {
         <Link
           key={item.href}
           href={item.href}
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
-            ativo === item.href ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-white/5'
+          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition ${
+            ativo === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5'
           }`}
         >
-          <span>{item.icon}</span>
+          <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${item.cor} flex items-center justify-center text-sm shrink-0 ${
+            ativo === item.href ? 'shadow-md' : 'opacity-90'
+          }`}>
+            {item.icon}
+          </span>
           <span>{item.label}</span>
         </Link>
       ))}
