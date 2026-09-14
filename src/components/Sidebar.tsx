@@ -44,13 +44,13 @@ export default function Sidebar({ ativo }: { ativo: string }) {
       <div className="mt-4 flex-1 relative rounded-xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 p-4 flex flex-col justify-between">
         <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10" />
         <div className="absolute bottom-16 -left-8 w-24 h-24 rounded-full bg-white/10" />
-        <div className="relative grid grid-cols-3 gap-2 w-fit">
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">✅</span>
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">👥</span>
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">🎯</span>
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">🤝</span>
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">📋</span>
-          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">💬</span>
+        <div className="relative grid grid-cols-3 gap-3 w-fit">
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">✅</span>
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">👥</span>
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">🎯</span>
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">🤝</span>
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">📋</span>
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl">💬</span>
         </div>
         <div className="relative">
           <p className="text-[10px] uppercase tracking-wider text-white/70 font-semibold mb-1">Frase do dia</p>
