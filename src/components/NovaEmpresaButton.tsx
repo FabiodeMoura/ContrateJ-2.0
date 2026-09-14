@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 
@@ -47,6 +48,7 @@ export default function NovaEmpresaButton() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setAberto(true)}
         className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition w-full text-left border border-dashed border-white/20 mt-2"
       >
@@ -54,12 +56,21 @@ export default function NovaEmpresaButton() {
         <span>Nova empresa</span>
       </button>
 
-      {aberto && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-20 p-4">
-          <div className="bg-white rounded-xl p-5 w-full max-w-xs">
+      {aberto && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }}
+          onClick={() => setAberto(false)}
+        >
+          <div
+            className="bg-white rounded-xl p-5 w-full max-w-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             <p className="font-medium text-sm mb-3">Cadastrar nova empresa</p>
 
             <input
+              type="text"
+              autoFocus
               placeholder="Nome fantasia"
               className="w-full border rounded-lg px-3 py-2 text-sm mb-3"
               value={nome}
@@ -81,12 +92,14 @@ export default function NovaEmpresaButton() {
 
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setAberto(false)}
                 className="flex-1 border rounded-lg py-2 text-sm"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={criarEmpresa}
                 disabled={criando || !nome}
                 className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm disabled:opacity-60"
@@ -95,9 +108,9 @@ export default function NovaEmpresaButton() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
 }
-

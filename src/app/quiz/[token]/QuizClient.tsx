@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import BannerCandidato from '@/components/BannerCandidato'
 
 interface Pergunta {
   id: string
@@ -86,17 +87,9 @@ export default function QuizClient({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6">
-        <div className="text-center pb-4 mb-5 border-b">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 mx-auto mb-2 flex items-center justify-center text-white">
-            💼
-          </div>
-          <p className="font-semibold text-sm">ContrateJá</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {nomeEmpresa} • Vaga: {funcao}
-          </p>
-        </div>
-
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm overflow-hidden">
+        <BannerCandidato subtitulo={`${nomeEmpresa} • Vaga: ${funcao}`} />
+        <div className="p-6">
         <div className="flex justify-between text-xs text-gray-500 mb-2">
           <span>Pergunta {indice + 1} de {perguntas.length}</span>
           <span>{progresso}%</span>
@@ -139,6 +132,7 @@ export default function QuizClient({
               </button>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>

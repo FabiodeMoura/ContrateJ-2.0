@@ -36,15 +36,16 @@ export default function Sidebar({ ativo }: { ativo: string }) {
       ))}
       <NovaEmpresaButton />
 
-      {/* painel decorativo — pessoas/recrutamento, sem imagens de comida */}
-      <div className="mt-auto relative rounded-xl overflow-hidden min-h-[10rem]">
-        <img
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=400&q=60"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
-        <p className="relative p-4 text-sm text-white font-medium italic leading-snug">
+      {/* painel decorativo — gradiente vivo com ícones, sem foto real */}
+      <div className="mt-auto relative rounded-xl overflow-hidden min-h-[11rem] bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 p-4 flex flex-col justify-between">
+        <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-white/10" />
+        <div className="absolute bottom-8 -left-6 w-16 h-16 rounded-full bg-white/10" />
+        <div className="relative flex gap-2">
+          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">✅</span>
+          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">👥</span>
+          <span className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">🎯</span>
+        </div>
+        <p className="relative text-sm text-white font-medium italic leading-snug">
           "{fraseDoDia()}"
         </p>
       </div>

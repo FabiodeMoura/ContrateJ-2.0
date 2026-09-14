@@ -76,13 +76,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Lado esquerdo — branding */}
-      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-800 to-purple-800 text-white p-10 flex-col justify-between">
-        <img
-          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=70"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-900/60 to-purple-900/50" />
+      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white p-10 flex-col justify-between">
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10" />
+        <div className="absolute bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10" />
+        <div className="absolute top-1/3 right-10 w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-2xl rotate-6 hidden sm:flex">
+          🎯
+        </div>
 
         <div className="relative flex items-center gap-2">
           <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">💼</div>

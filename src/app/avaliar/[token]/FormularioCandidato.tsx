@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import BannerCandidato from '@/components/BannerCandidato'
 
 export default function FormularioCandidato({
   vagaId,
@@ -63,17 +64,9 @@ export default function FormularioCandidato({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6">
-        <div className="text-center mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 mx-auto mb-2 flex items-center justify-center text-white">
-            💼
-          </div>
-          <p className="font-semibold text-sm">ContrateJá</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {nomeEmpresa} • Vaga: {funcao}
-          </p>
-        </div>
-
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm overflow-hidden">
+        <BannerCandidato subtitulo={`${nomeEmpresa} • Vaga: ${funcao}`} />
+        <div className="p-6">
         <p className="text-sm font-medium mb-3">
           Antes de começar, precisamos de alguns dados
         </p>
@@ -115,6 +108,7 @@ export default function FormularioCandidato({
         <p className="text-[11px] text-gray-400 text-center mt-3">
           Você só poderá responder uma vez
         </p>
+        </div>
       </div>
     </div>
   )
