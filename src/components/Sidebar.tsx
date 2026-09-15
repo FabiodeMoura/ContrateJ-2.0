@@ -12,8 +12,11 @@ const ITENS = [
 
 export default function Sidebar({ ativo }: { ativo: string }) {
   return (
-    <aside className="hidden md:flex md:w-56 md:fixed md:inset-y-0 md:left-0 bg-[#14161a] text-white flex-col overflow-y-auto z-10">
-      <div className="p-4 pb-0 flex flex-col gap-1">
+    <aside
+      className="hidden md:flex md:w-56 bg-[#14161a] text-white overflow-y-auto z-10"
+      style={{ position: 'fixed', top: 0, left: 0, bottom: 0, height: '100vh', flexDirection: 'column' }}
+    >
+      <div className="p-4 pb-0 flex flex-col gap-1" style={{ flexShrink: 0 }}>
         <div className="flex items-center gap-2 mb-1 px-1">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm">
             💼
@@ -44,7 +47,10 @@ export default function Sidebar({ ativo }: { ativo: string }) {
       </div>
 
       {/* painel decorativo — gradiente vivo com ícones de RH, toca as bordas e vai até o fim do menu, sem sobra preta */}
-      <div className="mt-4 flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 p-5 flex flex-col justify-between">
+      <div
+        className="mt-4 relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 p-5 flex flex-col justify-between"
+        style={{ flex: '1 1 auto', minHeight: '14rem' }}
+      >
         <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
         <div className="absolute bottom-20 -left-8 w-28 h-28 rounded-full bg-white/10" />
         <div className="relative grid grid-cols-3 gap-3 w-fit">

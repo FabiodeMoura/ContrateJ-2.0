@@ -6,6 +6,7 @@ import EmpresaSelector from '@/components/EmpresaSelector'
 import StatusBadge from '@/components/StatusBadge'
 import BaixarModeloButton from './BaixarModeloButton'
 import ImportarPlanilhaButton from './ImportarPlanilhaButton'
+import AdicionarColaboradorButton from './AdicionarColaboradorButton'
 import AcaoColaborador from './AcaoColaborador'
 
 export default async function ColaboradoresPage({
@@ -55,6 +56,9 @@ export default async function ColaboradoresPage({
             )}
             <BaixarModeloButton />
             <ImportarPlanilhaButton empresas={empresas ?? []} />
+            {empresas && empresas.length > 0 && (
+              <AdicionarColaboradorButton empresas={empresas} />
+            )}
           </div>
         </div>
 

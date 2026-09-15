@@ -79,13 +79,13 @@ export default async function DashboardPage({
     : 0
 
   const CARDS = [
-    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-indigo-500 to-indigo-600', link: '/vagas', linkLabel: 'Ver todas' },
-    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-green-500 to-green-600', link: '/candidatos', linkLabel: 'Ver candidatos' },
-    { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-blue-500 to-blue-600', link: '/candidatos', linkLabel: 'Ver histórico' },
-    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-purple-500 to-purple-600', link: '/relatorios', linkLabel: 'Ver relatório' },
-    { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-teal-500 to-teal-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
-    { label: 'Desligamentos', valor: colaboradoresDesligados, icone: '🚪', fundo: 'from-red-500 to-red-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
-    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-orange-500 to-orange-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-indigo-500 to-indigo-600', suave: 'bg-indigo-50/60 border-indigo-100', link: '/vagas', linkLabel: 'Ver todas' },
+    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-green-500 to-green-600', suave: 'bg-green-50/60 border-green-100', link: '/candidatos', linkLabel: 'Ver candidatos' },
+    { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-blue-500 to-blue-600', suave: 'bg-blue-50/60 border-blue-100', link: '/candidatos', linkLabel: 'Ver histórico' },
+    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-purple-500 to-purple-600', suave: 'bg-purple-50/60 border-purple-100', link: '/relatorios', linkLabel: 'Ver relatório' },
+    { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-teal-500 to-teal-600', suave: 'bg-teal-50/60 border-teal-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Desligamentos', valor: colaboradoresDesligados, icone: '🚪', fundo: 'from-red-500 to-red-600', suave: 'bg-red-50/60 border-red-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-orange-500 to-orange-600', suave: 'bg-orange-50/60 border-orange-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
   ]
 
   const atividades = [
@@ -176,13 +176,14 @@ export default async function DashboardPage({
         )}
         <section className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
           {CARDS.map((card) => (
-            <div key={card.label} className="bg-white rounded-2xl border p-4">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.fundo} flex items-center justify-center text-base mb-3`}>
+            <div key={card.label} className={`relative overflow-hidden rounded-2xl border p-4 ${card.suave} hover:shadow-md transition`}>
+              <div className={`absolute -right-3 -top-3 w-14 h-14 rounded-full bg-gradient-to-br ${card.fundo} opacity-10`} />
+              <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${card.fundo} flex items-center justify-center text-lg mb-3 shadow-sm`}>
                 {card.icone}
               </div>
-              <p className="text-2xl font-bold text-gray-800 leading-none">{card.valor}</p>
-              <p className="text-xs text-gray-500 mt-1.5 mb-2">{card.label}</p>
-              <Link href={card.link} className="text-xs font-medium text-indigo-600 hover:underline">
+              <p className="relative text-2xl font-bold text-gray-800 leading-none">{card.valor}</p>
+              <p className="relative text-xs text-gray-500 mt-1.5 mb-2">{card.label}</p>
+              <Link href={card.link} className="relative text-xs font-medium text-indigo-600 hover:underline">
                 {card.linkLabel} →
               </Link>
             </div>
