@@ -6,6 +6,7 @@ import SeletorStatus from './SeletorStatus'
 import RecomendacaoBadge from './RecomendacaoBadge'
 import ExportarExcelButton from './ExportarExcelButton'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import GerarLinkEntrevista from './GerarLinkEntrevista'
 
 export default async function CandidatosPage({
   searchParams,
@@ -33,7 +34,7 @@ export default async function CandidatosPage({
 
   const { data: candidatos } = await supabase
     .from('candidatos')
-    .select('id, nome_completo, email, whatsapp, percentual_aderencia, recomendacao, status, vagas ( funcao )')
+    .select('id, nome_completo, email, whatsapp, percentual_aderencia, recomendacao, status, link_entrevista, vagas ( funcao )')
     .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
     .order('percentual_aderencia', { ascending: false })
 
@@ -67,6 +68,7 @@ export default async function CandidatosPage({
                 <th className="p-3 font-medium">Aderência</th>
                 <th className="p-3 font-medium">Recomendação</th>
                 <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Entrevista</th>
               </tr>
             </thead>
             <tbody>
@@ -86,11 +88,14 @@ export default async function CandidatosPage({
                   <td className="p-3">
                     <SeletorStatus candidatoId={c.id} statusAtual={c.status} recomendacao={c.recomendacao} />
                   </td>
+                  <td className="p-3">
+                    <GerarLinkEntrevista candidatoId={c.id} nomeCandidato={c.nome_completo} linkExistente={c.link_entrevista} />
+                  </td>
                 </tr>
               ))}
               {(!candidatos || candidatos.length === 0) && (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="p-6 text-center text-gray-400 text-sm">
                     Nenhum candidato avaliado ainda.
                   </td>
                 </tr>
