@@ -24,6 +24,37 @@ export default function SeletorStatus({
 
   async function mudarStatus(novoStatus: string) {
     await supabase.from('candidatos').update({ status: novoStatus }).eq('id', candidatoId)
+
+    if (novoStatus === 'Aprovado') {
+      const { data: jaExiste } = await supabase
+        .from('colaboradores')
+        .select('id')
+        .eq('candidato_id', candidatoId)
+        .maybeSingle()
+
+      if (!jaExiste) {
+        const { data: candidato } = await supabase
+          .from('candidatos')
+          .select('nome_completo, email, whatsapp, vagas ( funcao, empresa_id )')
+          .eq('id', candidatoId)
+          .single()
+
+        const vaga = candidato ? (Array.isArray(candidato.vagas) ? candidato.vagas[0] : candidato.vagas) : null
+
+        if (candidato && vaga) {
+          await supabase.from('colaboradores').insert({
+            empresa_id: (vaga as any).empresa_id,
+            candidato_id: candidatoId,
+            nome_completo: candidato.nome_completo,
+            email: candidato.email,
+            whatsapp: candidato.whatsapp,
+            funcao: (vaga as any).funcao,
+            status: 'Ativo',
+          })
+        }
+      }
+    }
+
     router.refresh()
   }
 

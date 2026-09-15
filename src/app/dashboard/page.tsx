@@ -66,11 +66,26 @@ export default async function DashboardPage({
     .order('criado_em', { ascending: false })
     .limit(5)
 
+  const { data: colaboradores } = await supabase
+    .from('colaboradores')
+    .select('status')
+    .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
+
+  const totalColaboradores = colaboradores?.length ?? 0
+  const colaboradoresAtivos = colaboradores?.filter((c) => c.status === 'Ativo').length ?? 0
+  const colaboradoresDesligados = colaboradores?.filter((c) => c.status === 'Desligado').length ?? 0
+  const turnover = totalColaboradores > 0
+    ? Math.round((colaboradoresDesligados / totalColaboradores) * 1000) / 10
+    : 0
+
   const CARDS = [
     { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-indigo-500 to-indigo-600', link: '/vagas', linkLabel: 'Ver todas' },
     { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-green-500 to-green-600', link: '/candidatos', linkLabel: 'Ver candidatos' },
     { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-blue-500 to-blue-600', link: '/candidatos', linkLabel: 'Ver histórico' },
     { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-purple-500 to-purple-600', link: '/relatorios', linkLabel: 'Ver relatório' },
+    { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-teal-500 to-teal-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Desligamentos', valor: colaboradoresDesligados, icone: '🚪', fundo: 'from-red-500 to-red-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-orange-500 to-orange-600', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
   ]
 
   const atividades = [
@@ -159,7 +174,7 @@ export default async function DashboardPage({
             <EmpresaSelector empresas={empresas} valorAtual={filtroEmpresa} incluirTodas />
           </div>
         )}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <section className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
           {CARDS.map((card) => (
             <div key={card.label} className="bg-white rounded-2xl border p-4">
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.fundo} flex items-center justify-center text-base mb-3`}>

@@ -6,6 +6,7 @@ const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', cor: 'from-indigo-500 to-indigo-600' },
   { href: '/vagas', label: 'Vagas', icon: '💼', cor: 'from-blue-500 to-blue-600' },
   { href: '/candidatos', label: 'Candidatos', icon: '👥', cor: 'from-green-500 to-green-600' },
+  { href: '/colaboradores', label: 'Colaboradores', icon: '🪪', cor: 'from-teal-500 to-teal-600' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-purple-500 to-purple-600' },
 ]
 
