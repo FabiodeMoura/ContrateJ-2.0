@@ -13,7 +13,11 @@ export default function GerarLinkEntrevista({
   nomeCandidato: string
   linkExistente: string | null
 }) {
-  const [link, setLink] = useState(linkExistente)
+  const [link, setLink] = useState(
+    linkExistente?.includes('meet.jit.si')
+      ? linkExistente.replace('meet.jit.si', 'meet.ffmuc.net')
+      : linkExistente
+  )
   const [carregando, setCarregando] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -21,9 +25,10 @@ export default function GerarLinkEntrevista({
   async function gerarLink() {
     setCarregando(true)
 
-    // Jitsi Meet: videochamada instantânea pelo navegador, sem conta e sem custo
+    // meet.jit.si passou a exigir login para criar salas — usamos um servidor
+    // Jitsi público alternativo (mesma ferramenta, sem necessidade de conta)
     const sala = `ContrateJa-${candidatoId.replace(/-/g, '').slice(0, 12)}`
-    const novoLink = `https://meet.jit.si/${sala}`
+    const novoLink = `https://meet.ffmuc.net/${sala}`
 
     const { error } = await supabase
       .from('candidatos')
