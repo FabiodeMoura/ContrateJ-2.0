@@ -50,7 +50,7 @@ export default function NovaEmpresaButton() {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition w-full text-left border border-dashed border-white/20 mt-2"
+        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/90 hover:bg-white/10 transition w-full text-left border border-dashed border-white/30 mt-2"
       >
         <span>➕</span>
         <span>Nova empresa</span>

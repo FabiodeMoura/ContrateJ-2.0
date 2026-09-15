@@ -79,13 +79,13 @@ export default async function DashboardPage({
     : 0
 
   const CARDS = [
-    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-indigo-500 to-indigo-600', suave: 'bg-indigo-50/60 border-indigo-100', link: '/vagas', linkLabel: 'Ver todas' },
-    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-green-500 to-green-600', suave: 'bg-green-50/60 border-green-100', link: '/candidatos', linkLabel: 'Ver candidatos' },
-    { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-blue-500 to-blue-600', suave: 'bg-blue-50/60 border-blue-100', link: '/candidatos', linkLabel: 'Ver histórico' },
-    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-purple-500 to-purple-600', suave: 'bg-purple-50/60 border-purple-100', link: '/relatorios', linkLabel: 'Ver relatório' },
+    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-amber-500 to-amber-600', suave: 'bg-amber-50/60 border-amber-100', link: '/vagas', linkLabel: 'Ver todas' },
+    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-orange-500 to-orange-600', suave: 'bg-orange-50/60 border-orange-100', link: '/candidatos', linkLabel: 'Ver candidatos' },
+    { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-lime-500 to-lime-600', suave: 'bg-lime-50/60 border-lime-100', link: '/candidatos', linkLabel: 'Ver histórico' },
+    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-yellow-500 to-yellow-600', suave: 'bg-yellow-50/60 border-yellow-100', link: '/relatorios', linkLabel: 'Ver relatório' },
     { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-teal-500 to-teal-600', suave: 'bg-teal-50/60 border-teal-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
     { label: 'Desligamentos', valor: colaboradoresDesligados, icone: '🚪', fundo: 'from-red-500 to-red-600', suave: 'bg-red-50/60 border-red-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
-    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-orange-500 to-orange-600', suave: 'bg-orange-50/60 border-orange-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-rose-500 to-orange-600', suave: 'bg-rose-50/60 border-rose-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
   ]
 
   const atividades = [
@@ -110,7 +110,7 @@ export default async function DashboardPage({
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
         {/* Banner */}
-        <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600">
+        <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600">
           <div className="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10" />
           <div className="absolute -bottom-14 right-1/3 w-32 h-32 rounded-full bg-white/10" />
           <div className="absolute top-6 right-6 w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl rotate-6 hidden sm:flex">
@@ -123,8 +123,8 @@ export default async function DashboardPage({
           <div className="relative p-5 md:p-8 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-base shrink-0">💼</div>
-                <span className="text-white font-bold text-lg tracking-tight hidden sm:inline">ContrateJá</span>
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">💼</div>
+                <span className="text-white font-extrabold text-2xl md:text-3xl tracking-tight hidden sm:inline drop-shadow-sm">ContrateJá</span>
               </div>
               <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">🔔</div>
@@ -250,7 +250,7 @@ export default async function DashboardPage({
 
           {/* Coluna direita */}
           <div className="space-y-6">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white p-5">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 text-white p-5">
               <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10" />
               <div className="absolute bottom-3 right-3 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg">
                 🚀

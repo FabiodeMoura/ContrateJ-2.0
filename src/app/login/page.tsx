@@ -98,7 +98,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Lado esquerdo — branding */}
-      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white p-10 flex-col justify-between">
+      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 text-white p-10 flex-col justify-between">
         <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-white/10" />
         <div className="absolute bottom-0 -left-16 w-64 h-64 rounded-full bg-white/10" />
         <div className="absolute top-16 right-16 w-20 h-20 rounded-3xl bg-white/15 flex items-center justify-center text-3xl rotate-6 hidden sm:flex shadow-xl">
