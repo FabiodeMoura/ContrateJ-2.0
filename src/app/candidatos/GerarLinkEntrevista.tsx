@@ -66,6 +66,12 @@ export default function GerarLinkEntrevista({
   return (
     <div className="flex gap-1.5">
       <button
+        onClick={() => window.open(link!, '_blank')}
+        className="text-xs font-medium text-indigo-700 border border-indigo-200 bg-indigo-50 rounded-full px-2.5 py-1 hover:bg-indigo-100"
+      >
+        🎥 Entrar
+      </button>
+      <button
         onClick={enviarWhatsapp}
         className="text-xs font-medium text-green-700 border border-green-200 bg-green-50 rounded-full px-2.5 py-1 hover:bg-green-100"
       >

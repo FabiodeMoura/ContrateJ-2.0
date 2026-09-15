@@ -134,7 +134,7 @@ export default async function DashboardPage({
                 </div>
                 <div className="text-xs leading-tight text-white min-w-0 hidden sm:block">
                   <p className="font-medium truncate">{nomeUsuario}</p>
-                  <p className="text-indigo-200">Administrador</p>
+                  <p className="text-amber-100">Administrador</p>
                 </div>
                 <LogoutButton />
               </div>
@@ -145,7 +145,7 @@ export default async function DashboardPage({
               <h1 className="text-xl md:text-2xl font-semibold mb-2 text-white leading-snug">
                 Olá, {empresaAtual?.nome_fantasia ?? nomeUsuario}! 👋
               </h1>
-              <p className="text-sm text-indigo-100 max-w-sm">
+              <p className="text-sm text-amber-50 max-w-sm">
                 Aqui você acompanha suas vagas, candidatos e o progresso das suas contratações, tudo em um só lugar.
               </p>
             </div>

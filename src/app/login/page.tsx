@@ -120,7 +120,7 @@ export default function LoginPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
             {MARCA.missao}
           </h1>
-          <p className="text-base text-indigo-100 max-w-sm">
+          <p className="text-base text-amber-50 max-w-sm">
             Avalie o perfil comportamental dos candidatos antes de chamar pra
             entrevista, com testes prontos pro seu segmento.
           </p>
@@ -139,7 +139,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="relative text-xs text-indigo-200">
+        <p className="relative text-xs text-amber-100">
           © {MARCA.nome} — {MARCA.tagline}
         </p>
       </div>
