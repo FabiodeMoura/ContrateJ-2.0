@@ -36,7 +36,7 @@ export default async function VagasPage({
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/vagas" />
-      <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
+      <main className="flex-1 pt-16 md:pt-6 p-4 md:p-6 pb-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
           <div>
             <h1 className="text-lg font-semibold">Vagas</h1>

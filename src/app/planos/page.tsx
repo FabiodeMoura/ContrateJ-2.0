@@ -54,7 +54,7 @@ export default async function PlanosPage() {
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/planos" />
-      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         <h1 className="text-lg font-semibold mb-1">Planos</h1>
         <p className="text-xs text-gray-500 mb-6">Escolha o plano ideal pro tamanho do seu processo seletivo</p>
 

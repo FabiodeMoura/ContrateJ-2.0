@@ -1,32 +1,68 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import LogoMarca from './LogoMarca'
 
 const ITENS = [
-  { href: '/dashboard', label: 'Início', icon: '📊' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/vagas', label: 'Vagas', icon: '💼' },
   { href: '/candidatos', label: 'Candidatos', icon: '👥' },
+  { href: '/colaboradores', label: 'Colaboradores', icon: '🪪' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈' },
+  { href: '/planos', label: 'Planos', icon: '⭐' },
 ]
 
 export default function MobileNav() {
+  const [aberto, setAberto] = useState(false)
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-10">
-      {ITENS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`flex flex-col items-center gap-0.5 text-[10px] px-2 ${
-            pathname === item.href ? 'text-indigo-600 font-medium' : 'text-gray-400'
-          }`}
-        >
-          <span className="text-base">{item.icon}</span>
-          {item.label}
-        </Link>
-      ))}
-    </nav>
+    <>
+      {/* Botão flutuante que abre o menu — só aparece no celular */}
+      <button
+        onClick={() => setAberto(true)}
+        className="md:hidden fixed top-3 left-3 z-30 flex items-center gap-2 bg-[#0f172a] text-white text-xs font-medium pl-2 pr-3 py-2 rounded-full shadow-lg"
+      >
+        <span className="text-base">☰</span> Menu
+      </button>
+
+      {aberto && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setAberto(false)}
+          />
+          <div className="relative w-64 max-w-[80%] h-full bg-gradient-to-b from-slate-700 via-teal-600 to-lime-400 text-white flex flex-col p-4 gap-1 overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <span className="font-semibold text-sm"><LogoMarca /></span>
+              <button
+                onClick={() => setAberto(false)}
+                className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-[11px] uppercase tracking-wider text-white/70 font-semibold mb-1 px-1">Menu</p>
+
+            {ITENS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setAberto(false)}
+                className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm transition ${
+                  pathname === item.href ? 'bg-white/20 font-medium' : 'text-white/90 hover:bg-white/10'
+                }`}
+              >
+                <span className="text-base">{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   )
 }

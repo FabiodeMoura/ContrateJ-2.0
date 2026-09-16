@@ -72,7 +72,7 @@ export default async function RelatoriosPage({
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/relatorios" />
-      <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
+      <main className="flex-1 pt-16 md:pt-6 p-4 md:p-6 pb-6">
         <div className="mb-4">
           <h1 className="text-lg font-semibold">Relatórios</h1>
           <p className="text-xs text-gray-500">{empresaAtual?.nome_fantasia}</p>

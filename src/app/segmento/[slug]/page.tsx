@@ -117,7 +117,7 @@ export default async function SegmentoPage({
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/vagas" />
-      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         <div className={`bg-gradient-to-br ${segmento.cor} text-white rounded-2xl p-6 mb-6 flex flex-wrap items-center justify-between gap-4`}>
           <div className="flex items-center gap-4">
             <div className="text-4xl">{segmento.emoji}</div>

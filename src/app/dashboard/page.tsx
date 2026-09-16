@@ -119,7 +119,7 @@ export default async function DashboardPage({
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/dashboard" />
-      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         {/* Banner */}
         <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-slate-700 via-teal-600 to-lime-400">
           <div className="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10" />

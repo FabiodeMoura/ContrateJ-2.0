@@ -8,6 +8,7 @@ import BaixarModeloButton from './BaixarModeloButton'
 import ImportarPlanilhaButton from './ImportarPlanilhaButton'
 import AdicionarColaboradorButton from './AdicionarColaboradorButton'
 import AcaoColaborador from './AcaoColaborador'
+import EditarColaboradorButton from './EditarColaboradorButton'
 
 export default async function ColaboradoresPage({
   searchParams,
@@ -30,7 +31,7 @@ export default async function ColaboradoresPage({
 
   const { data: colaboradores } = await supabase
     .from('colaboradores')
-    .select('id, nome_completo, email, whatsapp, cpf, funcao, status, criado_em, empresas ( nome_fantasia )')
+    .select('id, empresa_id, nome_completo, email, whatsapp, cpf, funcao, status, criado_em, empresas ( nome_fantasia )')
     .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
     .order('criado_em', { ascending: false })
 
@@ -42,7 +43,7 @@ export default async function ColaboradoresPage({
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/colaboradores" />
-      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
           <div>
             <h1 className="text-lg font-semibold">Colaboradores</h1>
@@ -108,7 +109,21 @@ export default async function ColaboradoresPage({
                   <td className="p-3">{c.whatsapp ?? '—'}</td>
                   <td className="p-3">{c.cpf ?? '—'}</td>
                   <td className="p-3"><StatusBadge status={c.status} /></td>
-                  <td className="p-3"><AcaoColaborador id={c.id} status={c.status} /></td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <AcaoColaborador id={c.id} status={c.status} />
+                      <EditarColaboradorButton
+                        id={c.id}
+                        nomeAtual={c.nome_completo}
+                        emailAtual={c.email}
+                        whatsappAtual={c.whatsapp}
+                        cpfAtual={c.cpf}
+                        funcaoAtual={c.funcao}
+                        empresaIdAtual={c.empresa_id}
+                        empresas={empresas ?? []}
+                      />
+                    </div>
+                  </td>
                 </tr>
               ))}
               {(!colaboradores || colaboradores.length === 0) && (
