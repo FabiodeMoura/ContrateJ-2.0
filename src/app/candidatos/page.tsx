@@ -57,7 +57,41 @@ export default async function CandidatosPage({
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border overflow-x-auto">
+        {/* Celular: lista em cartões, com tudo visível sem precisar rolar pro lado */}
+        <div className="md:hidden space-y-3">
+          {candidatos?.map((c) => (
+            <div key={c.id} className="bg-white rounded-xl border p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <p className="font-medium text-sm">{c.nome_completo}</p>
+                  {/* @ts-expect-error - relação aninhada */}
+                  <p className="text-xs text-gray-400">{c.vagas?.funcao}</p>
+                </div>
+                <p className="font-semibold text-sm shrink-0">
+                  {c.percentual_aderencia != null ? `${c.percentual_aderencia}%` : '—'}
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 mb-1">{c.email}</p>
+              <p className="text-xs text-gray-500 mb-3">{c.whatsapp}</p>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <RecomendacaoBadge recomendacao={c.recomendacao} />
+                <SeletorStatus candidatoId={c.id} statusAtual={c.status} recomendacao={c.recomendacao} />
+              </div>
+              <div className="pt-3 border-t">
+                <p className="text-[11px] text-gray-400 mb-1.5">Entrevista por vídeo</p>
+                <GerarLinkEntrevista candidatoId={c.id} nomeCandidato={c.nome_completo} linkExistente={c.link_entrevista} />
+              </div>
+            </div>
+          ))}
+          {(!candidatos || candidatos.length === 0) && (
+            <p className="text-center text-gray-400 text-sm py-6 bg-white rounded-xl border">
+              Nenhum candidato avaliado ainda.
+            </p>
+          )}
+        </div>
+
+        {/* Desktop/tablet: tabela completa */}
+        <div className="hidden md:block bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-gray-500 border-b text-left">

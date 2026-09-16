@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import BannerCandidato from '@/components/BannerCandidato'
+import { salvarCandidatoPendente } from '@/lib/filaOffline'
 
 export default function FormularioCandidato({
   vagaId,
@@ -34,16 +35,24 @@ export default function FormularioCandidato({
       // o próprio registro (RLS), mas não podem LER de volta o que criaram,
       // então não dá pra depender de ".select().single()" pra pegar o ID.
       const candidatoId = crypto.randomUUID()
+      const dadosCandidato = {
+        id: candidatoId,
+        vaga_id: vagaId,
+        nome_completo: nome,
+        email,
+        whatsapp,
+      }
 
-      const { error } = await supabase
-        .from('candidatos')
-        .insert({
-          id: candidatoId,
-          vaga_id: vagaId,
-          nome_completo: nome,
-          email,
-          whatsapp,
-        })
+      // Sem internet: guarda no aparelho e já segue pro questionário.
+      // A sincronização acontece sozinha quando a conexão voltar.
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        salvarCandidatoPendente(dadosCandidato)
+        setCarregando(false)
+        router.push(`/quiz/${token}?candidato=${candidatoId}&offline=1`)
+        return
+      }
+
+      const { error } = await supabase.from('candidatos').insert(dadosCandidato)
 
       setCarregando(false)
 

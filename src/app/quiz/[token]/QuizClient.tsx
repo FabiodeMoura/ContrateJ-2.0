@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import BannerCandidato from '@/components/BannerCandidato'
+import { salvarRespostasPendente } from '@/lib/filaOffline'
 
 interface Pergunta {
   id: string
@@ -32,6 +33,7 @@ export default function QuizClient({
   const [respostas, setRespostas] = useState<{ perguntaId: string; letra: 'D' | 'I' | 'S' | 'C' }[]>([])
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [salvoOffline, setSalvoOffline] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -48,12 +50,23 @@ export default function QuizClient({
       opcao_escolhida: r.letra,
     }))
 
+    // Sem internet: guarda as respostas no aparelho. Um componente de
+    // fundo reenvia tudo (cadastro + respostas) assim que a conexão voltar.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      salvarRespostasPendente({ candidatoId, respostas: linhas })
+      setEnviando(false)
+      setSalvoOffline(true)
+      return
+    }
+
     // 1. Salva TODAS as respostas primeiro e só continua se der certo
     const { error: erroRespostas } = await supabase.from('respostas_candidato').insert(linhas)
 
     if (erroRespostas) {
+      // Pode ter caído a conexão durante o envio — não perde as respostas, guarda localmente
+      salvarRespostasPendente({ candidatoId, respostas: linhas })
       setEnviando(false)
-      setErro('Não conseguimos salvar suas respostas. Verifique sua internet e tente novamente.')
+      setSalvoOffline(true)
       return
     }
 
@@ -104,7 +117,16 @@ export default function QuizClient({
         <p className="text-sm font-medium mb-4">{perguntaAtual.texto_pergunta}</p>
 
         <div className="flex flex-col gap-2">
-          {enviando ? (
+          {salvoOffline ? (
+            <div className="text-center py-2">
+              <p className="text-3xl mb-2">📡</p>
+              <p className="text-sm font-medium mb-1">Sem internet no momento</p>
+              <p className="text-xs text-gray-500">
+                Suas respostas foram salvas neste aparelho e serão enviadas
+                automaticamente assim que a conexão voltar. Pode fechar esta página.
+              </p>
+            </div>
+          ) : enviando ? (
             <p className="text-sm text-gray-500 text-center py-4">Calculando seu resultado...</p>
           ) : erro ? (
             <div className="text-center py-2">
