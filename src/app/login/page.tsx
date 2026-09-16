@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { MARCA, VALORES_LOGIN } from '@/lib/frases'
+import LogoMarca from '@/components/LogoMarca'
 
 const SEGMENTOS = ['Restaurante', 'Bar', 'Lanchonete', 'Padaria', 'Sacolão', 'Pizzaria']
 
@@ -99,7 +100,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Lado esquerdo — branding */}
-      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 text-white p-10 flex-col justify-between">
+      <div className="hidden md:flex md:flex-1 relative overflow-hidden bg-gradient-to-br from-slate-700 via-teal-600 to-lime-400 text-white p-10 flex-col justify-between">
         <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-white/10" />
         <div className="absolute bottom-0 -left-16 w-64 h-64 rounded-full bg-white/10" />
         <div className="absolute top-16 right-16 w-20 h-20 rounded-3xl bg-white/15 flex items-center justify-center text-3xl rotate-6 hidden sm:flex shadow-xl">
@@ -114,14 +115,14 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-lg">💼</div>
-          <span className="font-bold text-xl tracking-tight">{MARCA.nome}</span>
+          <span className="font-bold text-xl tracking-tight"><LogoMarca /></span>
         </div>
 
         <div className="relative">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
             {MARCA.missao}
           </h1>
-          <p className="text-base text-amber-50 max-w-sm">
+          <p className="text-base text-teal-50 max-w-sm">
             Avalie o perfil comportamental dos candidatos antes de chamar pra
             entrevista, com testes prontos pro seu segmento.
           </p>
@@ -140,7 +141,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="relative text-xs text-amber-100">
+        <p className="relative text-xs text-teal-100">
           © {MARCA.nome} — {MARCA.tagline}
         </p>
       </div>

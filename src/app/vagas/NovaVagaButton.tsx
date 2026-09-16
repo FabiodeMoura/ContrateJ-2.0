@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import { verificarEIncrementarUso } from '@/lib/usoLinks'
 
 export default function NovaVagaButton({
   empresaId,
@@ -14,11 +15,28 @@ export default function NovaVagaButton({
   const [aberto, setAberto] = useState(false)
   const [perfilId, setPerfilId] = useState(perfis[0]?.id ?? '')
   const [criando, setCriando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   async function criarVaga() {
     setCriando(true)
+    setErro(null)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setCriando(false)
+      setErro('Sessão expirada. Atualize a página e faça login novamente.')
+      return
+    }
+
+    const uso = await verificarEIncrementarUso(supabase, user.id)
+    if (!uso || !uso.permitido) {
+      setCriando(false)
+      setErro(`Limite de ${uso?.limite_total ?? 'links'} atingido. Veja a aba "Planos" pra continuar gerando.`)
+      return
+    }
+
     const perfil = perfis.find((p) => p.id === perfilId)
 
     const { error } = await supabase.from('vagas').insert({
@@ -28,8 +46,12 @@ export default function NovaVagaButton({
     })
 
     setCriando(false)
-    setAberto(false)
-    if (!error) router.refresh()
+    if (!error) {
+      setAberto(false)
+      router.refresh()
+    } else {
+      setErro('Não foi possível criar a vaga. Tente novamente.')
+    }
   }
 
   return (
@@ -69,6 +91,16 @@ export default function NovaVagaButton({
                 {criando ? 'Criando...' : 'Gerar link'}
               </button>
             </div>
+            {erro && (
+              <div className="mt-3">
+                <p className="text-red-600 text-xs">{erro}</p>
+                {erro.includes('Limite') && (
+                  <a href="/planos" className="text-xs text-indigo-600 font-medium hover:underline">
+                    Ver planos →
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

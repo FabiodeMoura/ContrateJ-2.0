@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabaseClient'
+import { verificarEIncrementarUso } from '@/lib/usoLinks'
 
 interface Empresa {
   id: string
@@ -33,6 +34,20 @@ export default function GerarLinkCard({
     if (!empresaEscolhida) return
     setCarregando(true)
     setErro(null)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setCarregando(false)
+      setErro('Sessão expirada. Atualize a página e faça login novamente.')
+      return
+    }
+
+    const uso = await verificarEIncrementarUso(supabase, user.id)
+    if (!uso || !uso.permitido) {
+      setCarregando(false)
+      setErro(`Você atingiu o limite de ${uso?.limite_total ?? 'links'} do seu plano. Faça upgrade na aba "Planos".`)
+      return
+    }
 
     const { data, error } = await supabase
       .from('vagas')
@@ -125,7 +140,16 @@ export default function GerarLinkCard({
         </div>
       )}
 
-      {erro && <p className="text-red-600 text-xs">{erro}</p>}
+      {erro && (
+        <div>
+          <p className="text-red-600 text-xs">{erro}</p>
+          {erro.includes('limite') && (
+            <a href="/planos" className="text-xs text-indigo-600 font-medium hover:underline">
+              Ver planos →
+            </a>
+          )}
+        </div>
+      )}
     </div>
   )
 }

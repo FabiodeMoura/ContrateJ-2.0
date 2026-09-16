@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import NovaEmpresaButton from './NovaEmpresaButton'
 import { MARCA, fraseDoDia } from '@/lib/frases'
+import LogoMarca from './LogoMarca'
 
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', cor: 'from-white/25 to-white/10' },
@@ -8,12 +9,13 @@ const ITENS = [
   { href: '/candidatos', label: 'Candidatos', icon: '👥', cor: 'from-white/25 to-white/10' },
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪', cor: 'from-white/25 to-white/10' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-white/25 to-white/10' },
+  { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10' },
 ]
 
 export default function Sidebar({ ativo }: { ativo: string }) {
   return (
     <aside
-      className="hidden md:flex md:w-56 bg-gradient-to-b from-amber-400 via-orange-500 to-orange-600 text-white overflow-y-auto z-10"
+      className="hidden md:flex md:w-56 bg-gradient-to-b from-slate-700 via-teal-600 to-lime-400 text-white overflow-y-auto z-10"
       style={{ position: 'fixed', top: 0, left: 0, bottom: 0, height: '100vh', flexDirection: 'column' }}
     >
       <div className="p-4 pb-0 flex flex-col gap-1" style={{ flexShrink: 0 }}>
@@ -21,7 +23,7 @@ export default function Sidebar({ ativo }: { ativo: string }) {
           <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sm">
             💼
           </div>
-          <span className="font-semibold text-sm">{MARCA.nome}</span>
+          <span className="font-semibold text-sm"><LogoMarca /></span>
         </div>
         <p className="text-[11px] text-white/80 px-1 mb-5 leading-tight">
           {MARCA.tagline}

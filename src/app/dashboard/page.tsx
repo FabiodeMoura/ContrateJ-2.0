@@ -7,6 +7,7 @@ import StatusBadge from '@/components/StatusBadge'
 import AvatarIniciais from '@/components/AvatarIniciais'
 import LogoutButton from './LogoutButton'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import LogoMarca from '@/components/LogoMarca'
 import { SEGMENTOS_INFO } from '@/lib/segmentos'
 
 function tempoRelativo(data: string) {
@@ -66,6 +67,16 @@ export default async function DashboardPage({
     .order('criado_em', { ascending: false })
     .limit(5)
 
+  const { data: assinatura } = await supabase
+    .from('assinaturas')
+    .select('plano, limite_links, links_usados, links_extras')
+    .eq('dono_id', user.id)
+    .single()
+
+  const limiteTotalLinks = (assinatura?.limite_links ?? 20) + (assinatura?.links_extras ?? 0)
+  const linksUsados = assinatura?.links_usados ?? 0
+  const percentualUso = limiteTotalLinks > 0 ? Math.min(100, Math.round((linksUsados / limiteTotalLinks) * 100)) : 0
+
   const { data: colaboradores } = await supabase
     .from('colaboradores')
     .select('status')
@@ -79,13 +90,13 @@ export default async function DashboardPage({
     : 0
 
   const CARDS = [
-    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-amber-500 to-amber-600', suave: 'bg-amber-50/60 border-amber-100', link: '/vagas', linkLabel: 'Ver todas' },
-    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-orange-500 to-orange-600', suave: 'bg-orange-50/60 border-orange-100', link: '/candidatos', linkLabel: 'Ver candidatos' },
+    { label: 'Vagas Ativas', valor: vagasAtivas, icone: '💼', fundo: 'from-teal-500 to-teal-600', suave: 'bg-teal-50/60 border-teal-100', link: '/vagas', linkLabel: 'Ver todas' },
+    { label: 'Candidatos Recebidos', valor: totalCandidatos, icone: '👥', fundo: 'from-cyan-500 to-cyan-600', suave: 'bg-cyan-50/60 border-cyan-100', link: '/candidatos', linkLabel: 'Ver candidatos' },
     { label: 'Contratações', valor: aprovados, icone: '✅', fundo: 'from-lime-500 to-lime-600', suave: 'bg-lime-50/60 border-lime-100', link: '/candidatos', linkLabel: 'Ver histórico' },
-    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-yellow-500 to-yellow-600', suave: 'bg-yellow-50/60 border-yellow-100', link: '/relatorios', linkLabel: 'Ver relatório' },
-    { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-teal-500 to-teal-600', suave: 'bg-teal-50/60 border-teal-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Taxa de Admissão', valor: `${taxaAdmissao}%`, icone: '📈', fundo: 'from-emerald-500 to-emerald-600', suave: 'bg-emerald-50/60 border-emerald-100', link: '/relatorios', linkLabel: 'Ver relatório' },
+    { label: 'Colaboradores Ativos', valor: colaboradoresAtivos, icone: '🪪', fundo: 'from-sky-500 to-sky-600', suave: 'bg-sky-50/60 border-sky-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
     { label: 'Desligamentos', valor: colaboradoresDesligados, icone: '🚪', fundo: 'from-red-500 to-red-600', suave: 'bg-red-50/60 border-red-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
-    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-rose-500 to-orange-600', suave: 'bg-rose-50/60 border-rose-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
+    { label: 'Turnover', valor: `${turnover}%`, icone: '📉', fundo: 'from-amber-500 to-orange-600', suave: 'bg-amber-50/60 border-amber-100', link: '/colaboradores', linkLabel: 'Ver colaboradores' },
   ]
 
   const atividades = [
@@ -110,7 +121,7 @@ export default async function DashboardPage({
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
         {/* Banner */}
-        <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600">
+        <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-slate-700 via-teal-600 to-lime-400">
           <div className="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10" />
           <div className="absolute -bottom-14 right-1/3 w-32 h-32 rounded-full bg-white/10" />
           <div className="absolute top-6 right-6 w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl rotate-6 hidden sm:flex">
@@ -124,7 +135,7 @@ export default async function DashboardPage({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">💼</div>
-                <span className="text-white font-extrabold text-2xl md:text-3xl tracking-tight hidden sm:inline drop-shadow-sm">ContrateJá</span>
+                <span className="text-white font-extrabold text-2xl md:text-3xl tracking-tight hidden sm:inline drop-shadow-sm"><LogoMarca /></span>
               </div>
               <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">🔔</div>
@@ -134,7 +145,7 @@ export default async function DashboardPage({
                 </div>
                 <div className="text-xs leading-tight text-white min-w-0 hidden sm:block">
                   <p className="font-medium truncate">{nomeUsuario}</p>
-                  <p className="text-amber-100">Administrador</p>
+                  <p className="text-teal-100">Administrador</p>
                 </div>
                 <LogoutButton />
               </div>
@@ -145,10 +156,27 @@ export default async function DashboardPage({
               <h1 className="text-xl md:text-2xl font-semibold mb-2 text-white leading-snug">
                 Olá, {empresaAtual?.nome_fantasia ?? nomeUsuario}! 👋
               </h1>
-              <p className="text-sm text-amber-50 max-w-sm">
+              <p className="text-sm text-teal-50 max-w-sm">
                 Aqui você acompanha suas vagas, candidatos e o progresso das suas contratações, tudo em um só lugar.
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border p-5 mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium">
+              Plano <span className="text-teal-600">{assinatura?.plano ?? 'Gratuito'}</span> — {linksUsados} de {limiteTotalLinks} links usados
+            </p>
+            <Link href="/planos" className="text-xs font-medium text-indigo-600 hover:underline">
+              {percentualUso >= 80 ? 'Fazer upgrade →' : 'Ver planos →'}
+            </Link>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${percentualUso >= 100 ? 'bg-red-500' : percentualUso >= 80 ? 'bg-amber-500' : 'bg-green-500'}`}
+              style={{ width: `${percentualUso}%` }}
+            />
           </div>
         </div>
 
@@ -250,7 +278,7 @@ export default async function DashboardPage({
 
           {/* Coluna direita */}
           <div className="space-y-6">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 text-white p-5">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-700 via-teal-600 to-lime-400 text-white p-5">
               <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10" />
               <div className="absolute bottom-3 right-3 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg">
                 🚀
