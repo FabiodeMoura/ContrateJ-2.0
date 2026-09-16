@@ -88,7 +88,8 @@ export default function LoginPage() {
     setCarregando(false)
 
     if (error) {
-      setErro('Não foi possível enviar o link. Confira o e-mail digitado.')
+      console.error('Erro ao enviar recuperação de senha:', error)
+      setErro(error.message || 'Não foi possível enviar o link. Confira o e-mail digitado.')
       return
     }
 
