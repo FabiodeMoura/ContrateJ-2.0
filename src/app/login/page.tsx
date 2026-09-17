@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { MARCA, VALORES_LOGIN } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
-import { apenasDigitos, cnpjValido, formatarCnpj } from '@/lib/validarCnpj'
+import { apenasDigitos, formatarCnpj } from '@/lib/validarCnpj'
 
 const SEGMENTOS = ['Restaurante', 'Bar', 'Lanchonete', 'Padaria', 'Sacolão', 'Pizzaria']
 
@@ -45,14 +45,9 @@ export default function LoginPage() {
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault()
     setErro(null)
-
-    if (!cnpjValido(cnpj)) {
-      setErro('CNPJ inválido. Confira os números digitados.')
-      return
-    }
-
     setCarregando(true)
-    const cnpjLimpo = apenasDigitos(cnpj)
+
+    const cnpjLimpo = cnpj ? apenasDigitos(cnpj) : null
 
     // 1. Cria o usuário no Supabase Auth. Os dados da empresa vão junto no
     // metadata — se a confirmação de e-mail estiver ativada, usamos isso
@@ -280,8 +275,7 @@ export default function LoginPage() {
                 onChange={(e) => setNomeResponsavel(e.target.value)}
               />
               <input
-                required
-                placeholder="CNPJ"
+                placeholder="CNPJ (opcional)"
                 inputMode="numeric"
                 maxLength={18}
                 className="w-full border rounded-md px-3 py-2 text-sm"

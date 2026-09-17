@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { MARCA } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
@@ -10,10 +10,37 @@ export default function RedefinirSenhaPage() {
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const [validandoLink, setValidandoLink] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  // O link do e-mail pode vir com "?code=" (fluxo mais novo) — se vier,
+  // trocamos esse código por uma sessão de verdade antes de deixar a
+  // pessoa criar a nova senha.
+  useEffect(() => {
+    async function validarLink() {
+      const code = searchParams.get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          console.error('Erro ao validar link de recuperação:', error)
+          setErro(error.message)
+        }
+      } else {
+        // Sem "code" na URL: verifica se já existe uma sessão válida
+        // (caso o link tenha usado o formato antigo, baseado em #hash)
+        const { data } = await supabase.auth.getSession()
+        if (!data.session) {
+          setErro('Link inválido ou incompleto. Solicite um novo na tela de login.')
+        }
+      }
+      setValidandoLink(false)
+    }
+    validarLink()
+  }, [])
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
@@ -33,7 +60,8 @@ export default function RedefinirSenhaPage() {
     setCarregando(false)
 
     if (error) {
-      setErro('Não foi possível atualizar a senha. O link pode ter expirado — solicite um novo.')
+      console.error('Erro ao atualizar senha:', error)
+      setErro(error.message || 'Não foi possível atualizar a senha. O link pode ter expirado — solicite um novo.')
       return
     }
 
@@ -58,6 +86,8 @@ export default function RedefinirSenhaPage() {
               <p className="text-sm font-medium">Senha atualizada!</p>
               <p className="text-xs text-gray-500 mt-1">Redirecionando pro painel...</p>
             </div>
+          ) : validandoLink ? (
+            <p className="text-sm text-gray-500 text-center py-4">Verificando link...</p>
           ) : (
             <form onSubmit={salvar} className="space-y-3">
               <h2 className="text-lg font-semibold">Criar nova senha</h2>

@@ -69,6 +69,39 @@ export default async function RelatoriosPage({
     return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0
   }
 
+  // Motivos de saída por função (pergunta 9 da entrevista de desligamento:
+  // "O que mais pesou na sua decisão de sair/desligamento?")
+  const { data: colaboradoresDaEmpresa } = await supabase
+    .from('colaboradores')
+    .select('id, funcao')
+    .eq('empresa_id', empresaId ?? '00000000-0000-0000-0000-000000000000')
+
+  const funcaoPorColaboradorId = Object.fromEntries(
+    (colaboradoresDaEmpresa ?? []).map((c) => [c.id, c.funcao ?? 'Sem função'])
+  )
+  const colaboradorIds = (colaboradoresDaEmpresa ?? []).map((c) => c.id)
+
+  const { data: respostasMotivo } = await supabase
+    .from('respostas_saida')
+    .select('colaborador_id, resposta')
+    .eq('ordem', 9)
+    .in('colaborador_id', colaboradorIds.length ? colaboradorIds : ['00000000-0000-0000-0000-000000000000'])
+
+  const motivosPorFuncao: Record<string, Record<string, number>> = {}
+  respostasMotivo?.forEach((r) => {
+    const funcao = funcaoPorColaboradorId[r.colaborador_id] ?? 'Sem função'
+    motivosPorFuncao[funcao] = motivosPorFuncao[funcao] ?? {}
+    motivosPorFuncao[funcao][r.resposta] = (motivosPorFuncao[funcao][r.resposta] ?? 0) + 1
+  })
+
+  const CORES_MOTIVO: Record<string, string> = {
+    'Salário': 'bg-red-500',
+    'Ambiente de trabalho': 'bg-orange-500',
+    'Gestão/liderança': 'bg-amber-500',
+    'Oportunidade em outro lugar': 'bg-teal-500',
+    'Outro motivo': 'bg-gray-400',
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/relatorios" />
@@ -140,6 +173,42 @@ export default async function RelatoriosPage({
             </div>
           ))}
         </div>
+
+        {/* Motivos de saída por função */}
+        {Object.keys(motivosPorFuncao).length > 0 && (
+          <div className="bg-white rounded-xl border p-4 mt-6">
+            <p className="font-medium text-sm mb-1">Motivos de Saída por Função</p>
+            <p className="text-xs text-gray-400 mb-4">Baseado nas respostas da pesquisa de desligamento</p>
+
+            <div className="space-y-5">
+              {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
+                const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
+                return (
+                  <div key={funcao}>
+                    <p className="text-sm font-medium mb-2">{funcao}</p>
+                    <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
+                      {Object.entries(motivos).map(([motivo, qtd]) => (
+                        <div
+                          key={motivo}
+                          className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
+                          style={{ width: `${(qtd / totalRespostas) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                      {Object.entries(motivos).map(([motivo, qtd]) => (
+                        <span key={motivo} className="flex items-center gap-1.5">
+                          <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
+                          {motivo} — <strong>{Math.round((qtd / totalRespostas) * 100)}%</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </main>
       <MobileNav />
     </div>

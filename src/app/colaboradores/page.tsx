@@ -86,7 +86,44 @@ export default async function ColaboradoresPage({
           </div>
         </section>
 
-        <div className="bg-white rounded-xl border overflow-x-auto">
+        {/* Celular: cartões, sem precisar rolar a tabela pro lado */}
+        <div className="md:hidden space-y-3">
+          {colaboradores?.map((c) => (
+            <div key={c.id} className="bg-white rounded-xl border p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{c.nome_completo}</p>
+                  {/* @ts-expect-error - relação aninhada */}
+                  <p className="text-xs text-gray-400 truncate">{c.empresas?.nome_fantasia} • {c.funcao ?? 'Sem função'}</p>
+                </div>
+                <StatusBadge status={c.status} />
+              </div>
+              <p className="text-xs text-gray-500 mb-1">📱 {c.whatsapp ?? '—'}</p>
+              <p className="text-xs text-gray-500 mb-3">🪪 {c.cpf ?? '—'}</p>
+              <div className="flex items-center justify-between gap-2 pt-3 border-t">
+                <AcaoColaborador id={c.id} status={c.status} linkSaidaExistente={c.link_entrevista_saida} />
+                <EditarColaboradorButton
+                  id={c.id}
+                  nomeAtual={c.nome_completo}
+                  emailAtual={c.email}
+                  whatsappAtual={c.whatsapp}
+                  cpfAtual={c.cpf}
+                  funcaoAtual={c.funcao}
+                  empresaIdAtual={c.empresa_id}
+                  empresas={empresas ?? []}
+                />
+              </div>
+            </div>
+          ))}
+          {(!colaboradores || colaboradores.length === 0) && (
+            <p className="text-center text-gray-400 text-sm py-6 bg-white rounded-xl border">
+              Nenhum colaborador cadastrado ainda. Baixe o modelo e importe sua planilha.
+            </p>
+          )}
+        </div>
+
+        {/* Desktop/tablet: tabela completa */}
+        <div className="hidden md:block bg-white rounded-xl border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-gray-500 border-b text-left">
