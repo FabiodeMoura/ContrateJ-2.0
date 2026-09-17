@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { MARCA } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
 
-export default function RedefinirSenhaPage() {
+function RedefinirSenhaConteudo() {
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -119,5 +119,13 @@ export default function RedefinirSenhaPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RedefinirSenhaPage() {
+  return (
+    <Suspense fallback={null}>
+      <RedefinirSenhaConteudo />
+    </Suspense>
   )
 }
