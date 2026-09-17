@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { MARCA, VALORES_LOGIN } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
+import { apenasDigitos, cnpjValido, formatarCnpj } from '@/lib/validarCnpj'
 
 const SEGMENTOS = ['Restaurante', 'Bar', 'Lanchonete', 'Padaria', 'Sacolão', 'Pizzaria']
 
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [nomeEmpresa, setNomeEmpresa] = useState('')
   const [segmento, setSegmento] = useState(SEGMENTOS[0])
   const [nomeResponsavel, setNomeResponsavel] = useState('')
+  const [cnpj, setCnpj] = useState('')
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault()
@@ -42,19 +44,44 @@ export default function LoginPage() {
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault()
-    setCarregando(true)
     setErro(null)
 
-    // 1. Cria o usuário no Supabase Auth
+    if (!cnpjValido(cnpj)) {
+      setErro('CNPJ inválido. Confira os números digitados.')
+      return
+    }
+
+    setCarregando(true)
+    const cnpjLimpo = apenasDigitos(cnpj)
+
+    // 1. Cria o usuário no Supabase Auth. Os dados da empresa vão junto no
+    // metadata — se a confirmação de e-mail estiver ativada, usamos isso
+    // depois (em ProvisionarConta) pra criar a empresa só quando a pessoa
+    // realmente confirmar o e-mail e fizer login pela primeira vez.
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
-      options: { data: { nome: nomeResponsavel } },
+      options: {
+        data: {
+          nome: nomeResponsavel,
+          empresa_pendente: nomeEmpresa,
+          segmento_pendente: segmento,
+          cnpj_pendente: cnpjLimpo,
+        },
+      },
     })
 
     if (error || !data.user) {
       setCarregando(false)
       setErro(error?.message ?? 'Não foi possível criar a conta.')
+      return
+    }
+
+    // Sem sessão = confirmação de e-mail está ativada; a conta/empresa só
+    // será criada depois que a pessoa confirmar e logar (ver ProvisionarConta.tsx)
+    if (!data.session) {
+      setCarregando(false)
+      setSucesso('Quase lá! Enviamos um link de confirmação pro seu e-mail. Confirme pra liberar seu acesso.')
       return
     }
 
@@ -76,12 +103,17 @@ export default function LoginPage() {
       dono_id: data.user.id,
       nome_fantasia: nomeEmpresa,
       segmento_principal: segmento,
+      cnpj: cnpjLimpo,
     })
 
     setCarregando(false)
 
     if (erroEmpresa) {
-      setErro('Conta criada, mas houve um erro ao cadastrar a empresa: ' + erroEmpresa.message)
+      setErro(
+        erroEmpresa.code === '23505'
+          ? 'Esse CNPJ já está cadastrado em outra conta.'
+          : 'Conta criada, mas houve um erro ao cadastrar a empresa: ' + erroEmpresa.message
+      )
       return
     }
 
@@ -248,6 +280,15 @@ export default function LoginPage() {
                 onChange={(e) => setNomeResponsavel(e.target.value)}
               />
               <input
+                required
+                placeholder="CNPJ"
+                inputMode="numeric"
+                maxLength={18}
+                className="w-full border rounded-md px-3 py-2 text-sm"
+                value={cnpj}
+                onChange={(e) => setCnpj(formatarCnpj(e.target.value))}
+              />
+              <input
                 type="email"
                 required
                 placeholder="E-mail"
@@ -264,6 +305,7 @@ export default function LoginPage() {
                 onChange={(e) => setSenha(e.target.value)}
               />
               {erro && <p className="text-red-600 text-xs">{erro}</p>}
+              {sucesso && <p className="text-green-700 text-xs bg-green-50 rounded-md px-3 py-2">{sucesso}</p>}
               <button
                 disabled={carregando}
                 className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium disabled:opacity-60"

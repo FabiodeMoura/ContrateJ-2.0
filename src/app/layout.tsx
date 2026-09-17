@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import RegistrarServiceWorker from '@/components/RegistrarServiceWorker'
 import SincronizarFila from '@/components/SincronizarFila'
+import ProvisionarConta from '@/components/ProvisionarConta'
 
 export const metadata: Metadata = {
   title: 'ContrateJá — Talentos que fazem a diferença no seu negócio',
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <RegistrarServiceWorker />
         <SincronizarFila />
+        <ProvisionarConta />
       </body>
     </html>
   )
