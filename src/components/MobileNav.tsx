@@ -12,6 +12,7 @@ const ITENS = [
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈' },
   { href: '/planos', label: 'Planos', icon: '⭐' },
+  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼' },
 ]
 
 export default function MobileNav() {
@@ -36,7 +37,7 @@ export default function MobileNav() {
           />
           <div className="relative w-64 max-w-[80%] h-full bg-gradient-to-b from-slate-700 via-teal-600 to-lime-400 text-white flex flex-col p-4 gap-1 overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <span className="font-semibold text-sm"><LogoMarca /></span>
+              <LogoMarca altura={18} />
               <button
                 onClick={() => setAberto(false)}
                 className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center"

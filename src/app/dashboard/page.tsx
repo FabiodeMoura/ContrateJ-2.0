@@ -79,12 +79,14 @@ export default async function DashboardPage({
 
   const { data: colaboradores } = await supabase
     .from('colaboradores')
-    .select('status')
+    .select('status, tipo_desligamento')
     .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
 
   const totalColaboradores = colaboradores?.length ?? 0
   const colaboradoresAtivos = colaboradores?.filter((c) => c.status === 'Ativo').length ?? 0
   const colaboradoresDesligados = colaboradores?.filter((c) => c.status === 'Desligado').length ?? 0
+  const pediuDemissao = colaboradores?.filter((c) => c.tipo_desligamento === 'Pediu demissão').length ?? 0
+  const foiDemitido = colaboradores?.filter((c) => c.tipo_desligamento === 'Foi demitido').length ?? 0
   const turnover = totalColaboradores > 0
     ? Math.round((colaboradoresDesligados / totalColaboradores) * 1000) / 10
     : 0
@@ -134,8 +136,8 @@ export default async function DashboardPage({
           <div className="relative p-5 md:p-8 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">💼</div>
-                <span className="text-white font-extrabold text-2xl md:text-3xl tracking-tight hidden sm:inline drop-shadow-sm"><LogoMarca /></span>
+                <img src="/logo-icon.png" alt="" className="w-10 h-10 rounded-xl object-contain shrink-0" />
+                <span className="hidden sm:block drop-shadow-sm"><LogoMarca altura={32} /></span>
               </div>
               <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">🔔</div>
@@ -217,6 +219,39 @@ export default async function DashboardPage({
             </div>
           ))}
         </section>
+
+        {colaboradoresDesligados > 0 && (
+          <div className="bg-white rounded-2xl border p-5 mb-6">
+            <p className="text-sm font-medium mb-3">Motivo dos desligamentos</p>
+            <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-3">
+              {pediuDemissao > 0 && (
+                <div
+                  className="h-full bg-orange-400"
+                  style={{ width: `${(pediuDemissao / colaboradoresDesligados) * 100}%` }}
+                />
+              )}
+              {foiDemitido > 0 && (
+                <div
+                  className="h-full bg-red-500"
+                  style={{ width: `${(foiDemitido / colaboradoresDesligados) * 100}%` }}
+                />
+              )}
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-400" /> Pediu demissão — <strong>{pediuDemissao}</strong>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Foi demitido — <strong>{foiDemitido}</strong>
+              </span>
+              {(colaboradoresDesligados - pediuDemissao - foiDemitido) > 0 && (
+                <span className="text-gray-400">
+                  {colaboradoresDesligados - pediuDemissao - foiDemitido} sem motivo registrado
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

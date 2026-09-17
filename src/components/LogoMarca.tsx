@@ -1,7 +1,16 @@
-export default function LogoMarca({ className = '' }: { className?: string }) {
+export default function LogoMarca({
+  altura = 22,
+  className = '',
+}: {
+  altura?: number
+  className?: string
+}) {
   return (
-    <span className={className}>
-      Contrate<span className="text-lime-300">Já</span>
-    </span>
+    <img
+      src="/logo-wordmark.png"
+      alt="ContrateJá"
+      className={className}
+      style={{ height: altura, width: 'auto', display: 'block' }}
+    />
   )
 }

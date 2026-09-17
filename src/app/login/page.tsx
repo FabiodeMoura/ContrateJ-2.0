@@ -58,7 +58,20 @@ export default function LoginPage() {
       return
     }
 
-    // 2. Cria a primeira empresa vinculada a esse usuário
+    // 2. Se esse e-mail foi convidado por alguém, entra direto na conta
+    // dessa pessoa (mesma equipe) em vez de criar uma empresa nova.
+    const { data: entrouComoConvidado } = await supabase.rpc('vincular_convite_equipe', {
+      p_uid: data.user.id,
+      p_email: email,
+    })
+
+    if (entrouComoConvidado) {
+      setCarregando(false)
+      router.push('/dashboard')
+      return
+    }
+
+    // 3. Senão, cria a primeira empresa vinculada a esse usuário
     const { error: erroEmpresa } = await supabase.from('empresas').insert({
       dono_id: data.user.id,
       nome_fantasia: nomeEmpresa,
@@ -114,8 +127,8 @@ export default function LoginPage() {
         </div>
 
         <div className="relative flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-lg">💼</div>
-          <span className="font-bold text-xl tracking-tight"><LogoMarca /></span>
+          <img src="/logo-icon.png" alt="" className="w-10 h-10 rounded-xl object-contain" />
+          <LogoMarca altura={26} />
         </div>
 
         <div className="relative">

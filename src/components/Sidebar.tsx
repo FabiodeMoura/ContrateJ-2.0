@@ -10,6 +10,7 @@ const ITENS = [
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪', cor: 'from-white/25 to-white/10' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-white/25 to-white/10' },
   { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10' },
+  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', cor: 'from-white/25 to-white/10' },
 ]
 
 export default function Sidebar({ ativo }: { ativo: string }) {
@@ -20,10 +21,8 @@ export default function Sidebar({ ativo }: { ativo: string }) {
     >
       <div className="p-4 pb-0 flex flex-col gap-1" style={{ flexShrink: 0 }}>
         <div className="flex items-center gap-2 mb-1 px-1">
-          <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sm">
-            💼
-          </div>
-          <span className="font-semibold text-sm"><LogoMarca /></span>
+          <img src="/logo-icon.png" alt="" className="w-7 h-7 rounded-lg object-contain" />
+          <LogoMarca altura={18} />
         </div>
         <p className="text-[11px] text-white/80 px-1 mb-5 leading-tight">
           {MARCA.tagline}

@@ -1,0 +1,18 @@
+export interface PerguntaSaida {
+  ordem: number
+  texto: string
+  opcoes: string[]
+}
+
+export const PERGUNTAS_SAIDA: PerguntaSaida[] = [
+  { ordem: 1, texto: 'Como você avalia sua experiência geral na empresa?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim'] },
+  { ordem: 2, texto: 'Você recomendaria essa empresa como um bom lugar pra trabalhar?', opcoes: ['Sim', 'Talvez', 'Não'] },
+  { ordem: 3, texto: 'Como era o relacionamento com seu gestor direto?', opcoes: ['Ótimo', 'Bom', 'Regular', 'Ruim'] },
+  { ordem: 4, texto: 'Você sentiu que seu trabalho era reconhecido?', opcoes: ['Sempre', 'Às vezes', 'Raramente', 'Nunca'] },
+  { ordem: 5, texto: 'O salário e os benefícios atendiam suas expectativas?', opcoes: ['Sim', 'Parcialmente', 'Não'] },
+  { ordem: 6, texto: 'Como você avalia o ambiente de trabalho com a equipe?', opcoes: ['Ótimo', 'Bom', 'Regular', 'Ruim'] },
+  { ordem: 7, texto: 'Você teve oportunidades de crescimento na empresa?', opcoes: ['Sim', 'Não', 'Não sei dizer'] },
+  { ordem: 8, texto: 'A comunicação da empresa com você era clara?', opcoes: ['Sempre', 'Às vezes', 'Raramente'] },
+  { ordem: 9, texto: 'O que mais pesou na sua decisão de sair (ou no desligamento)?', opcoes: ['Salário', 'Ambiente de trabalho', 'Gestão/liderança', 'Oportunidade em outro lugar', 'Outro motivo'] },
+  { ordem: 10, texto: 'No geral, você teria continuado na empresa se pudesse?', opcoes: ['Sim, com certeza', 'Talvez', 'Não'] },
+]
