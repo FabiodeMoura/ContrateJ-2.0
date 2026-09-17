@@ -20,26 +20,51 @@ function RedefinirSenhaConteudo() {
   // O link do e-mail pode vir com "?code=" (fluxo mais novo) — se vier,
   // trocamos esse código por uma sessão de verdade antes de deixar a
   // pessoa criar a nova senha.
+  // O Supabase processa o link de recuperação (seja por "?code=" ou pelo
+  // formato antigo com #hash) e dispara o evento PASSWORD_RECOVERY quando
+  // a sessão temporária fica pronta pra trocar a senha. Ouvimos esse
+  // evento em vez de tentar adivinhar o formato do link.
   useEffect(() => {
-    async function validarLink() {
+    let resolvido = false
+
+    const { data: assinatura } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
+        resolvido = true
+        setValidandoLink(false)
+      }
+    })
+
+    async function tentarValidar() {
       const code = searchParams.get('code')
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          console.error('Erro ao validar link de recuperação:', error)
-          setErro(error.message)
-        }
-      } else {
-        // Sem "code" na URL: verifica se já existe uma sessão válida
-        // (caso o link tenha usado o formato antigo, baseado em #hash)
-        const { data } = await supabase.auth.getSession()
-        if (!data.session) {
-          setErro('Link inválido ou incompleto. Solicite um novo na tela de login.')
-        }
+        if (error) console.error('Erro ao trocar código por sessão:', error)
       }
-      setValidandoLink(false)
+
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        resolvido = true
+        setValidandoLink(false)
+        return
+      }
+
+      // Dá um tempo pro Supabase processar o #hash da URL (acontece de
+      // forma assíncrona) antes de considerar que o link é inválido.
+      setTimeout(async () => {
+        if (resolvido) return
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          setValidandoLink(false)
+        } else {
+          setErro('Link inválido ou expirado. Volte no login e peça um novo.')
+          setValidandoLink(false)
+        }
+      }, 2000)
     }
-    validarLink()
+
+    tentarValidar()
+
+    return () => assinatura.subscription.unsubscribe()
   }, [])
 
   async function salvar(e: React.FormEvent) {
