@@ -17,54 +17,51 @@ function RedefinirSenhaConteudo() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  // O link do e-mail pode vir com "?code=" (fluxo mais novo) — se vier,
-  // trocamos esse código por uma sessão de verdade antes de deixar a
-  // pessoa criar a nova senha.
-  // O Supabase processa o link de recuperação (seja por "?code=" ou pelo
-  // formato antigo com #hash) e dispara o evento PASSWORD_RECOVERY quando
-  // a sessão temporária fica pronta pra trocar a senha. Ouvimos esse
-  // evento em vez de tentar adivinhar o formato do link.
+  // Pega o token de recuperação direto da URL (seja no formato "#access_token="
+  // ou "?code=") e cria a sessão manualmente. Não depende de nenhuma
+  // detecção automática do Supabase, que era onde travava antes.
   useEffect(() => {
-    let resolvido = false
+    async function validar() {
+      // Formato mais comum pro link de recuperação: token vem depois de "#"
+      const hash = typeof window !== 'undefined' ? window.location.hash : ''
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.replace('#', ''))
+        const access_token = params.get('access_token')
+        const refresh_token = params.get('refresh_token')
 
-    const { data: assinatura } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
-        resolvido = true
-        setValidandoLink(false)
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+          if (error) {
+            console.error('Erro ao criar sessão a partir do link:', error)
+            setErro('Não foi possível validar o link: ' + error.message)
+          }
+          setValidandoLink(false)
+          return
+        }
       }
-    })
 
-    async function tentarValidar() {
+      // Formato alternativo: "?code=" na URL
       const code = searchParams.get('code')
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) console.error('Erro ao trocar código por sessão:', error)
-      }
-
-      const { data } = await supabase.auth.getSession()
-      if (data.session) {
-        resolvido = true
+        if (error) {
+          console.error('Erro ao trocar código por sessão:', error)
+          setErro('Não foi possível validar o link: ' + error.message)
+        }
         setValidandoLink(false)
         return
       }
 
-      // Dá um tempo pro Supabase processar o #hash da URL (acontece de
-      // forma assíncrona) antes de considerar que o link é inválido.
-      setTimeout(async () => {
-        if (resolvido) return
-        const { data } = await supabase.auth.getSession()
-        if (data.session) {
-          setValidandoLink(false)
-        } else {
-          setErro('Link inválido ou expirado. Volte no login e peça um novo.')
-          setValidandoLink(false)
-        }
-      }, 2000)
+      // Nenhum dos dois formatos veio na URL — confere se por acaso já
+      // existe uma sessão válida antes de desistir
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) {
+        setErro('Link inválido ou incompleto. Volte no login e peça um novo.')
+      }
+      setValidandoLink(false)
     }
 
-    tentarValidar()
-
-    return () => assinatura.subscription.unsubscribe()
+    validar()
   }, [])
 
   async function salvar(e: React.FormEvent) {
