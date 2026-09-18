@@ -57,6 +57,7 @@ export default function LoginPage() {
       email,
       password: senha,
       options: {
+        emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`,
         data: {
           nome: nomeResponsavel,
           empresa_pendente: nomeEmpresa,
