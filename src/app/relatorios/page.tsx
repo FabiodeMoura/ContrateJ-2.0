@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabaseServer'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
+import EmpresaSelector from '@/components/EmpresaSelector'
 
 export default async function RelatoriosPage({
   searchParams,
@@ -73,7 +74,7 @@ export default async function RelatoriosPage({
   // "O que mais pesou na sua decisão de sair/desligamento?")
   const { data: colaboradoresDaEmpresa } = await supabase
     .from('colaboradores')
-    .select('id, funcao')
+    .select('id, funcao, status, tipo_desligamento')
     .eq('empresa_id', empresaId ?? '00000000-0000-0000-0000-000000000000')
 
   const funcaoPorColaboradorId = Object.fromEntries(
@@ -102,13 +103,41 @@ export default async function RelatoriosPage({
     'Outro motivo': 'bg-gray-400',
   }
 
+  // Turnover geral e quebra por tipo de desligamento (Pediu demissão x Foi demitido)
+  const totalColaboradores = colaboradoresDaEmpresa?.length ?? 0
+  const desligadosLista = colaboradoresDaEmpresa?.filter((c) => c.status === 'Desligado') ?? []
+  const totalDesligados = desligadosLista.length
+  const turnoverGeral = totalColaboradores > 0
+    ? Math.round((totalDesligados / totalColaboradores) * 1000) / 10
+    : 0
+  const pedidosDemissao = desligadosLista.filter((c) => c.tipo_desligamento === 'Pediu demissão').length
+  const demissoes = desligadosLista.filter((c) => c.tipo_desligamento === 'Foi demitido').length
+
+  const tipoPorFuncao: Record<string, Record<string, number>> = {}
+  desligadosLista.forEach((c) => {
+    if (!c.tipo_desligamento) return
+    const funcao = c.funcao ?? 'Sem função'
+    tipoPorFuncao[funcao] = tipoPorFuncao[funcao] ?? {}
+    tipoPorFuncao[funcao][c.tipo_desligamento] = (tipoPorFuncao[funcao][c.tipo_desligamento] ?? 0) + 1
+  })
+
+  const CORES_TIPO: Record<string, string> = {
+    'Pediu demissão': 'bg-amber-500',
+    'Foi demitido': 'bg-red-500',
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/relatorios" />
       <main className="flex-1 pt-16 md:pt-6 p-4 md:p-6 pb-6">
-        <div className="mb-4">
-          <h1 className="text-lg font-semibold">Relatórios</h1>
-          <p className="text-xs text-gray-500">{empresaAtual?.nome_fantasia}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-lg font-semibold">Relatórios</h1>
+            <p className="text-xs text-gray-500">{empresaAtual?.nome_fantasia}</p>
+          </div>
+          {empresas && empresas.length > 1 && (
+            <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
+          )}
         </div>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -174,39 +203,89 @@ export default async function RelatoriosPage({
           ))}
         </div>
 
-        {/* Motivos de saída por função */}
-        {Object.keys(motivosPorFuncao).length > 0 && (
+        {/* Turnover: totais, tipo de desligamento e motivos da entrevista de saída */}
+        {totalColaboradores > 0 && (
           <div className="bg-white rounded-xl border p-4 mt-6">
-            <p className="font-medium text-sm mb-1">Motivos de Saída por Função</p>
-            <p className="text-xs text-gray-400 mb-4">Baseado nas respostas da pesquisa de desligamento</p>
+            <p className="font-medium text-sm mb-1">Turnover</p>
+            <p className="text-xs text-gray-400 mb-4">Colaboradores efetivados e indicadores da entrevista de desligamento</p>
 
-            <div className="space-y-5">
-              {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
-                const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
-                return (
-                  <div key={funcao}>
-                    <p className="text-sm font-medium mb-2">{funcao}</p>
-                    <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
-                      {Object.entries(motivos).map(([motivo, qtd]) => (
-                        <div
-                          key={motivo}
-                          className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
-                          style={{ width: `${(qtd / totalRespostas) * 100}%` }}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                      {Object.entries(motivos).map(([motivo, qtd]) => (
-                        <span key={motivo} className="flex items-center gap-1.5">
-                          <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
-                          {motivo} — <strong>{Math.round((qtd / totalRespostas) * 100)}%</strong>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <MiniKpi label="Colaboradores" valor={`${totalColaboradores}`} />
+              <MiniKpi label="Desligados" valor={`${totalDesligados}`} />
+              <MiniKpi label="Turnover" valor={`${turnoverGeral}%`} />
+              <MiniKpi label="Pediu demissão x Foi demitido" valor={`${pedidosDemissao} x ${demissoes}`} />
             </div>
+
+            {Object.keys(tipoPorFuncao).length > 0 && (
+              <div className="space-y-5 mb-6">
+                <p className="text-xs font-medium text-gray-600">Tipo de desligamento por função</p>
+                {Object.entries(tipoPorFuncao).map(([funcao, tipos]) => {
+                  const totalTipos = Object.values(tipos).reduce((a, b) => a + b, 0)
+                  return (
+                    <div key={funcao}>
+                      <p className="text-sm font-medium mb-2">{funcao}</p>
+                      <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
+                        {Object.entries(tipos).map(([tipo, qtd]) => (
+                          <div
+                            key={tipo}
+                            className={CORES_TIPO[tipo] ?? 'bg-gray-400'}
+                            style={{ width: `${(qtd / totalTipos) * 100}%` }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                        {Object.entries(tipos).map(([tipo, qtd]) => (
+                          <span key={tipo} className="flex items-center gap-1.5">
+                            <span className={`w-2.5 h-2.5 rounded-full ${CORES_TIPO[tipo] ?? 'bg-gray-400'}`} />
+                            {tipo} — <strong>{qtd}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {Object.keys(motivosPorFuncao).length > 0 && (
+              <div className="space-y-5 pt-5 border-t">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Motivos de saída por função</p>
+                  <p className="text-[11px] text-gray-400">Baseado na pergunta "O que mais pesou na sua decisão de sair (ou no desligamento)?" da pesquisa de desligamento</p>
+                </div>
+                {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
+                  const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
+                  return (
+                    <div key={funcao}>
+                      <p className="text-sm font-medium mb-2">{funcao}</p>
+                      <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
+                        {Object.entries(motivos).map(([motivo, qtd]) => (
+                          <div
+                            key={motivo}
+                            className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
+                            style={{ width: `${(qtd / totalRespostas) * 100}%` }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                        {Object.entries(motivos).map(([motivo, qtd]) => (
+                          <span key={motivo} className="flex items-center gap-1.5">
+                            <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
+                            {motivo} — <strong>{Math.round((qtd / totalRespostas) * 100)}%</strong>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {Object.keys(motivosPorFuncao).length === 0 && (
+              <p className="text-xs text-gray-400 pt-4 border-t">
+                Ainda não há respostas da pesquisa de desligamento para mostrar os motivos de saída.
+              </p>
+            )}
           </div>
         )}
       </main>
@@ -220,6 +299,15 @@ function Kpi({ cor, label, valor }: { cor: string; label: string; valor: string 
     <div className={`bg-gradient-to-br ${cor} text-white rounded-xl p-4`}>
       <p className="text-[11px] opacity-90">{label}</p>
       <p className="text-2xl font-bold">{valor}</p>
+    </div>
+  )
+}
+
+function MiniKpi({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-3 border">
+      <p className="text-lg font-bold text-gray-800">{valor}</p>
+      <p className="text-[11px] text-gray-500 mt-0.5">{label}</p>
     </div>
   )
 }

@@ -67,6 +67,11 @@ export default function Sidebar({ ativo }: { ativo: string }) {
           <p className="text-lg text-white font-bold leading-snug drop-shadow-sm">
             "{fraseDoDia()}"
           </p>
+          <img
+            src="/developer-banner.jpg"
+            alt="Desenvolvedor Fábio de Moura"
+            className="relative mt-4 w-full rounded-lg shadow-md"
+          />
         </div>
       </div>
     </aside>

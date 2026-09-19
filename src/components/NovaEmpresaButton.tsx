@@ -36,7 +36,12 @@ export default function NovaEmpresaButton() {
     setCriando(false)
 
     if (error) {
-      setErro('Não foi possível cadastrar a empresa. Tente novamente.')
+      console.error('Erro ao cadastrar empresa:', error)
+      setErro(
+        error.message === 'new row violates row-level security policy for table "empresas"'
+          ? 'Sem permissão para cadastrar (sessão de login pode ter expirado). Saia e entre novamente.'
+          : `Não foi possível cadastrar: ${error.message}`
+      )
       return
     }
 

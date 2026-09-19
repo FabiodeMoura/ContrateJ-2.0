@@ -5,6 +5,7 @@ import MobileNav from '@/components/MobileNav'
 import SeletorStatus from './SeletorStatus'
 import RecomendacaoBadge from './RecomendacaoBadge'
 import ExportarExcelButton from './ExportarExcelButton'
+import AdicionarCandidatoButton from './AdicionarCandidatoButton'
 import EmpresaSelector from '@/components/EmpresaSelector'
 import GerarLinkEntrevista from './GerarLinkEntrevista'
 
@@ -53,6 +54,7 @@ export default async function CandidatosPage({
             {empresas && empresas.length > 1 && (
               <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
             )}
+            <AdicionarCandidatoButton vagas={vagasDaEmpresa ?? []} />
             <ExportarExcelButton candidatos={candidatos ?? []} />
           </div>
         </div>

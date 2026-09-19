@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LogoMarca from './LogoMarca'
+import NovaEmpresaButton from './NovaEmpresaButton'
 
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -61,6 +62,10 @@ export default function MobileNav() {
                 {item.label}
               </Link>
             ))}
+
+            <div className="mt-2 border-t border-white/15 pt-2">
+              <NovaEmpresaButton />
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabaseServer'
 import { redirect, notFound } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
+import EmpresaSelector from '@/components/EmpresaSelector'
 import GerarLinkCard from './GerarLinkCard'
 
 // Mapa de segmento -> funções e visual de cada segmento.
@@ -109,6 +110,8 @@ export default async function SegmentoPage({
     .select('id, funcao')
     .in('funcao', segmento.funcoes)
 
+  const empresaSelecionada = searchParams.empresa ?? empresas?.[0]?.id ?? ''
+
   // mantém a ordem definida acima (não a ordem alfabética que vem do banco)
   const perfisOrdenados = segmento.funcoes
     .map((f) => perfis?.find((p) => p.funcao === f))
@@ -135,6 +138,17 @@ export default async function SegmentoPage({
           )}
         </div>
 
+        {empresas && empresas.length > 1 && (
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-gray-500">
+              Gerando link para: <span className="font-medium text-gray-700">
+                {empresas.find((e) => e.id === empresaSelecionada)?.nome_fantasia}
+              </span>
+            </p>
+            <EmpresaSelector empresas={empresas} valorAtual={empresaSelecionada} />
+          </div>
+        )}
+
         {(!empresas || empresas.length === 0) && (
           <p className="text-sm text-gray-500">
             Você ainda não tem uma empresa cadastrada.
@@ -149,7 +163,7 @@ export default async function SegmentoPage({
               funcao={perfil.funcao}
               icone={ICONES_FUNCAO[perfil.funcao] ?? '💼'}
               empresas={empresas ?? []}
-              empresaIdPadrao={empresas?.[0]?.id ?? ''}
+              empresaIdPadrao={empresaSelecionada}
             />
           ))}
           {perfisOrdenados.length === 0 && (
