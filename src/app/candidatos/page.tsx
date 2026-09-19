@@ -54,7 +54,12 @@ export default async function CandidatosPage({
             {empresas && empresas.length > 1 && (
               <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
             )}
-            <AdicionarCandidatoButton vagas={vagasDaEmpresa ?? []} />
+            <div className="flex flex-col items-end gap-1">
+              <AdicionarCandidatoButton vagas={vagasDaEmpresa ?? []} />
+              {(!vagasDaEmpresa || vagasDaEmpresa.length === 0) && (
+                <p className="text-[11px] text-amber-600">Crie uma vaga antes (aba "Vagas") pra poder cadastrar candidatos</p>
+              )}
+            </div>
             <ExportarExcelButton candidatos={candidatos ?? []} />
           </div>
         </div>

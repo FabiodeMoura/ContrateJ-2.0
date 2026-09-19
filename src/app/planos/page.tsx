@@ -20,7 +20,7 @@ const PLANOS = [
     periodo: '/mês',
     limite: 50,
     destaque: true,
-    beneficios: ['50 links de avaliação por mês', 'Tudo do plano gratuito', 'Suporte prioritário'],
+    beneficios: ['50 links de avaliação por mês', 'Libera o cadastro de +1 empresa', 'Tudo do plano gratuito', 'Suporte prioritário'],
     // Troque pelo link de checkout real do produto no Hotmart
     linkHotmart: 'https://pay.hotmart.com/SEU-PRODUTO-79',
   },
@@ -30,7 +30,7 @@ const PLANOS = [
     periodo: '/mês',
     limite: 80,
     destaque: false,
-    beneficios: ['80 links de avaliação por mês', 'Tudo do plano anterior', 'Suporte prioritário'],
+    beneficios: ['80 links de avaliação por mês', 'Libera o cadastro de +1 empresa', 'Tudo do plano anterior', 'Suporte prioritário'],
     // Troque pelo link de checkout real do produto no Hotmart
     linkHotmart: 'https://pay.hotmart.com/SEU-PRODUTO-99',
   },

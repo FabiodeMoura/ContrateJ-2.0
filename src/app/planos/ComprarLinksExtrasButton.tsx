@@ -25,7 +25,7 @@ export default function ComprarLinksExtrasButton() {
           +
         </button>
       </div>
-      <p className="text-sm text-gray-500">= R$ {(quantidade * 2).toFixed(2).replace('.', ',')}</p>
+      <p className="text-sm text-gray-500">= R$ {(quantidade * 3).toFixed(2).replace('.', ',')}</p>
       <a
         href={LINK_HOTMART_AVULSO}
         target="_blank"

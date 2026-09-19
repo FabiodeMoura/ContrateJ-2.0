@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 // ATENÇÃO — leia antes de configurar no Hotmart:
 //
 // 1. No Hotmart, crie 3 produtos (Plano 79, Plano 99, Links avulsos) com
-//    os preços combinados (79,90 / 99,90 / 2,00).
+//    os preços combinados (79,90 / 99,90 / 3,00).
 // 2. Em cada produto, vá em Ferramentas > Webhook e cadastre esta URL:
 //    https://contrateja.onrender.com/api/webhooks/hotmart
 // 3. Copie o "Hottok" (token de segurança) que o Hotmart gera e cole na
@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     tipo = 'plano_99'
   } else if (produtoId === process.env.HOTMART_ID_LINKS_AVULSOS) {
     tipo = 'links_avulsos'
-    // Cada link avulso custa R$ 2,00 — estima a quantidade pelo valor pago.
+    // Cada link avulso custa R$ 3,00 — estima a quantidade pelo valor pago.
     // Ajuste aqui se o Hotmart mandar a quantidade em outro campo.
-    quantidade = valorTotal ? Math.max(1, Math.round(valorTotal / 2)) : 1
+    quantidade = valorTotal ? Math.max(1, Math.round(valorTotal / 3)) : 1
   }
 
   if (!tipo) {

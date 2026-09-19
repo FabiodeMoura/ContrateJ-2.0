@@ -6,8 +6,8 @@ export default async function SaidaPage({ params }: { params: { id: string } }) 
   const supabase = createServerSupabase()
 
   const { data: colaborador } = await supabase
-    .from('colaboradores')
-    .select('id, nome_completo, empresas ( nome_fantasia )')
+    .from('colaboradores_publico')
+    .select('id, nome_completo, empresa_nome')
     .eq('id', params.id)
     .single()
 
@@ -23,8 +23,7 @@ export default async function SaidaPage({ params }: { params: { id: string } }) 
     <PesquisaSaidaClient
       colaboradorId={params.id}
       nomeColaborador={colaborador.nome_completo}
-      // @ts-expect-error - relação aninhada
-      nomeEmpresa={colaborador.empresas?.nome_fantasia ?? ''}
+      nomeEmpresa={colaborador.empresa_nome ?? ''}
       jaRespondeu={(jaRespondeu?.length ?? 0) > 0}
     />
   )

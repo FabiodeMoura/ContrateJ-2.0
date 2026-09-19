@@ -22,18 +22,26 @@ export default function PesquisaSaidaClient({
   const [concluido, setConcluido] = useState(jaRespondeu)
   const supabase = createClient()
 
+  const [erro, setErro] = useState<string | null>(null)
   const pergunta = PERGUNTAS_SAIDA[indice]
   const progresso = Math.round(((indice + (concluido ? 1 : 0)) / PERGUNTAS_SAIDA.length) * 100)
 
   async function responder(opcao: string) {
     setEnviando(true)
-    await supabase.from('respostas_saida').insert({
+    setErro(null)
+    const { error } = await supabase.from('respostas_saida').insert({
       colaborador_id: colaboradorId,
       ordem: pergunta.ordem,
       pergunta: pergunta.texto,
       resposta: opcao,
     })
     setEnviando(false)
+
+    if (error) {
+      console.error('Erro ao salvar resposta:', error)
+      setErro('Não foi possível salvar sua resposta. Tente novamente.')
+      return
+    }
 
     if (indice + 1 < PERGUNTAS_SAIDA.length) {
       setIndice(indice + 1)
@@ -77,6 +85,7 @@ export default function PesquisaSaidaClient({
                   </button>
                 ))}
               </div>
+              {erro && <p className="text-red-600 text-xs mt-3">{erro}</p>}
             </>
           )}
         </div>
