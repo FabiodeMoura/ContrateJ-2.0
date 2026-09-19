@@ -75,7 +75,8 @@ export default async function DashboardPage({
 
   const limiteTotalLinks = (assinatura?.limite_links ?? 20) + (assinatura?.links_extras ?? 0)
   const linksUsados = assinatura?.links_usados ?? 0
-  const percentualUso = limiteTotalLinks > 0 ? Math.min(100, Math.round((linksUsados / limiteTotalLinks) * 100)) : 0
+  const contaIlimitada = assinatura?.plano === 'Demonstração'
+  const percentualUso = limiteTotalLinks > 0 && !contaIlimitada ? Math.min(100, Math.round((linksUsados / limiteTotalLinks) * 100)) : 0
 
   const { data: colaboradores } = await supabase
     .from('colaboradores')
@@ -168,7 +169,7 @@ export default async function DashboardPage({
         <div className="bg-white rounded-2xl border p-5 mb-8">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <p className="text-sm font-medium">
-              Plano <span className="text-teal-600">{assinatura?.plano ?? 'Gratuito'}</span> — {linksUsados} de {limiteTotalLinks} links usados
+              Plano <span className="text-teal-600">{assinatura?.plano ?? 'Gratuito'}</span> — {contaIlimitada ? `${linksUsados} links usados (ilimitado)` : `${linksUsados} de ${limiteTotalLinks} links usados`}
             </p>
             <Link href="/planos" className="text-xs font-medium text-indigo-600 hover:underline">
               {percentualUso >= 80 ? 'Fazer upgrade →' : 'Ver planos →'}

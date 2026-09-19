@@ -31,9 +31,14 @@ export default function NovaVagaButton({
     }
 
     const uso = await verificarEIncrementarUso(supabase, user.id)
-    if (!uso || !uso.permitido) {
+    if (!uso) {
       setCriando(false)
-      setErro(`Limite de ${uso?.limite_total ?? 'links'} atingido. Veja a aba "Planos" pra continuar gerando.`)
+      setErro('Não foi possível verificar o seu plano agora. Atualize a página e tente novamente.')
+      return
+    }
+    if (!uso.permitido) {
+      setCriando(false)
+      setErro(`Limite de ${uso.limite_total} links atingido. Veja a aba "Planos" pra continuar gerando.`)
       return
     }
 

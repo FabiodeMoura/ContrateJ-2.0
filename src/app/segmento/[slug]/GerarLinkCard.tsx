@@ -43,9 +43,14 @@ export default function GerarLinkCard({
     }
 
     const uso = await verificarEIncrementarUso(supabase, user.id)
-    if (!uso || !uso.permitido) {
+    if (!uso) {
       setCarregando(false)
-      setErro(`Você atingiu o limite de ${uso?.limite_total ?? 'links'} do seu plano. Faça upgrade na aba "Planos".`)
+      setErro('Não foi possível verificar o seu plano agora. Atualize a página e tente novamente.')
+      return
+    }
+    if (!uso.permitido) {
+      setCarregando(false)
+      setErro(`Você atingiu o limite de ${uso.limite_total} links do seu plano. Faça upgrade na aba "Planos".`)
       return
     }
 

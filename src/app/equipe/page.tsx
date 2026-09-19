@@ -17,7 +17,8 @@ export default async function EquipePage() {
     .single()
 
   const plano = assinatura?.plano ?? 'Gratuito'
-  const limiteUsuarios = plano === 'Gratuito' ? 1 : 3
+  const ilimitado = plano === 'Demonstração'
+  const limiteUsuarios = plano === 'Gratuito' ? 1 : ilimitado ? 9999 : 3
 
   const { data: membros } = await supabase
     .from('equipe')
@@ -39,7 +40,7 @@ export default async function EquipePage() {
         <div className="bg-white rounded-2xl border p-5 mb-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium">
-              Plano <span className="text-teal-600">{plano}</span> — {totalUsuarios} de {limiteUsuarios} usuário(s)
+              Plano <span className="text-teal-600">{plano}</span> — {ilimitado ? `${totalUsuarios} usuário(s) — ilimitado` : `${totalUsuarios} de ${limiteUsuarios} usuário(s)`}
             </p>
             {plano === 'Gratuito' && (
               <a href="/planos" className="text-xs font-medium text-indigo-600 hover:underline">

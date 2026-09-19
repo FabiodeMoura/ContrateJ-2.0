@@ -49,7 +49,8 @@ export default async function PlanosPage() {
 
   const limiteTotal = (assinatura?.limite_links ?? 20) + (assinatura?.links_extras ?? 0)
   const usados = assinatura?.links_usados ?? 0
-  const percentual = limiteTotal > 0 ? Math.min(100, Math.round((usados / limiteTotal) * 100)) : 0
+  const contaIlimitada = assinatura?.plano === 'Demonstração'
+  const percentual = limiteTotal > 0 && !contaIlimitada ? Math.min(100, Math.round((usados / limiteTotal) * 100)) : 0
 
   return (
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
@@ -63,7 +64,7 @@ export default async function PlanosPage() {
             <p className="text-sm font-medium">
               Seu plano atual: <span className="text-indigo-600">{assinatura?.plano ?? 'Gratuito'}</span>
             </p>
-            <p className="text-sm text-gray-500">{usados} / {limiteTotal} links usados</p>
+            <p className="text-sm text-gray-500">{contaIlimitada ? `${usados} links usados (ilimitado)` : `${usados} / ${limiteTotal} links usados`}</p>
           </div>
           <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
             <div
