@@ -47,6 +47,17 @@ export default async function PlanosPage() {
     .eq('dono_id', user.id)
     .single()
 
+  // Assinatura cancelada mas ainda dentro do período pago: mostra até quando vai o acesso
+  const { data: cancelamentos } = await supabase
+    .from('assinaturas_hotmart')
+    .select('plano, acesso_ate')
+    .eq('dono_id', user.id)
+    .eq('status', 'cancelamento_agendado')
+    .order('acesso_ate', { ascending: true })
+  const acessoAte = cancelamentos?.[0]?.acesso_ate
+    ? new Date(cancelamentos[0].acesso_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    : null
+
   const limiteTotal = (assinatura?.limite_links ?? 20) + (assinatura?.links_extras ?? 0)
   const usados = assinatura?.links_usados ?? 0
   const contaIlimitada = assinatura?.plano === 'Demonstração'
@@ -58,6 +69,13 @@ export default async function PlanosPage() {
       <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         <h1 className="text-lg font-semibold mb-1">Planos</h1>
         <p className="text-xs text-gray-500 mb-6">Escolha o plano ideal pro tamanho do seu processo seletivo</p>
+
+        {acessoAte && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
+            Sua assinatura foi cancelada. Você continua com acesso até <strong>{acessoAte}</strong>; depois disso a
+            conta volta ao plano gratuito. Para continuar, assine de novo abaixo.
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl border p-5 mb-8">
           <div className="flex items-center justify-between mb-2">

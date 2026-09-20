@@ -18,6 +18,8 @@ import { createClient } from '@supabase/supabase-js'
 //      Alternativa: o código de cada oferta (HOTMART_OFERTA_PLANO_79 / _99), que é o
 //      trecho depois de "off=" no link de pagamento.
 //    - Links avulsos (produto de pagamento único): HOTMART_ID_LINKS_AVULSOS
+//    Eventos tratados: compra aprovada/completa (libera), cancelamento de assinatura (mantém o
+//    acesso até o fim do período pago) e reembolso/chargeback (encerra na hora).
 // 5. HOTMART_SEGREDO_INTERNO (Render): senha entre este site e o banco de dados.
 //    NUNCA escreva esse valor no código nem no GitHub. Se precisar trocar, altere
 //    no Render e na função processar_compra_hotmart do Supabase ao mesmo tempo.
@@ -37,6 +39,19 @@ function iguais(a: string, b: string) {
   return diferenca === 0
 }
 
+// Converte a data que o Hotmart manda (milissegundos ou segundos) para texto ISO
+function paraDataIso(valor: unknown): string | null {
+  const n = Number(valor)
+  if (!valor || !Number.isFinite(n) || n <= 0) return null
+  const d = new Date(n > 1e12 ? n : n * 1000)
+  return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}
+
+// Eventos do Hotmart que o site trata. Os demais só são confirmados (respondem "ok").
+const EVENTOS_COMPRA = ['PURCHASE_APPROVED', 'PURCHASE_COMPLETE'] // libera plano / links
+const EVENTOS_CANCELAMENTO = ['SUBSCRIPTION_CANCELLATION'] // cancelou: acesso vai até o fim do período pago
+const EVENTOS_ESTORNO = ['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK'] // reembolso/chargeback: encerra na hora
+
 export async function POST(request: NextRequest) {
   const hottokRecebido = request.headers.get('x-hotmart-hottok') ?? ''
   const hottokEsperado = process.env.HOTMART_HOTTOK
@@ -54,24 +69,31 @@ export async function POST(request: NextRequest) {
 
   const corpo = await request.json()
 
-  const evento = corpo?.event
-  const email = corpo?.data?.buyer?.email
-  const produtoId = String(corpo?.data?.product?.id ?? '')
-  const valorTotal = corpo?.data?.purchase?.price?.value ?? corpo?.data?.purchase?.full_price?.value
-  // Identifica a transação (para não contar duas vezes o mesmo aviso) e se é
-  // renovação mensal (recurrence_number > 1), que não libera empresa nova.
-  const transacao = corpo?.data?.purchase?.transaction ? String(corpo.data.purchase.transaction) : null
-  const codigoOferta = corpo?.data?.purchase?.offer?.code ? String(corpo.data.purchase.offer.code) : ''
-  const nomePlano = corpo?.data?.subscription?.plan?.name ? String(corpo.data.subscription.plan.name) : ''
-  const renovacao = Number(corpo?.data?.purchase?.recurrence_number ?? 1) > 1
+  const evento: string = corpo?.event ?? ''
+  const dados = corpo?.data ?? {}
+  const eCompra = EVENTOS_COMPRA.includes(evento)
+  const eCancelamento = EVENTOS_CANCELAMENTO.includes(evento)
+  const eEstorno = EVENTOS_ESTORNO.includes(evento)
 
-  if (evento !== 'PURCHASE_APPROVED' && evento !== 'PURCHASE_COMPLETE') {
-    // Ignora cancelamentos/reembolsos por enquanto — só confirma o recebimento
+  if (!eCompra && !eCancelamento && !eEstorno) {
+    // Outros avisos (boleto emitido, atraso, etc.): só confirma o recebimento
     return NextResponse.json({ ok: true, ignorado: evento })
   }
 
+  const email: string | undefined = dados.buyer?.email ?? dados.subscriber?.email ?? dados.user?.email
+  const produtoId = String(dados.product?.id ?? '')
+  const valorTotal = dados.purchase?.price?.value ?? dados.purchase?.full_price?.value
+  // Identifica a transação (para não contar duas vezes o mesmo aviso)
+  const transacao = dados.purchase?.transaction ? String(dados.purchase.transaction) : null
+  const renovacao = Number(dados.purchase?.recurrence_number ?? 1) > 1
+  const codigoOferta = dados.purchase?.offer?.code ? String(dados.purchase.offer.code) : ''
+  const nomePlano = dados.subscription?.plan?.name ? String(dados.subscription.plan.name) : ''
+  // Código do assinante: identifica a mesma assinatura em todas as cobranças
+  const chaveAssinatura = String(dados.subscription?.subscriber?.code ?? dados.subscriber?.code ?? '') || null
+
   if (!email) {
-    return NextResponse.json({ erro: 'E-mail do comprador não encontrado no payload' }, { status: 400 })
+    console.error(`Webhook do Hotmart (${evento}): e-mail do comprador não encontrado no aviso.`)
+    return NextResponse.json({ ok: false, erro: 'e-mail não encontrado' })
   }
 
   let tipo: 'plano_79' | 'plano_99' | 'links_avulsos' | null = null
@@ -100,14 +122,13 @@ export async function POST(request: NextRequest) {
   } else if (produtoId && produtoId === process.env.HOTMART_ID_LINKS_AVULSOS) {
     tipo = 'links_avulsos'
     // Cada link avulso custa R$ 3,00 — estima a quantidade pelo valor pago.
-    // Ajuste aqui se o Hotmart mandar a quantidade em outro campo.
     quantidade = valorTotal ? Math.max(1, Math.round(valorTotal / 3)) : 1
   }
 
   if (!tipo) {
     // Responde 2xx de propósito: se o Hotmart receber erro, ele desativa sozinho a configuração do
     // webhook. O aviso fica registrado no log do Render.
-    console.error('Webhook do Hotmart: compra não reconhecida (confira HOTMART_ID_* e HOTMART_OFERTA_* no Render).', {
+    console.error(`Webhook do Hotmart (${evento}): compra não reconhecida (confira HOTMART_ID_* e HOTMART_OFERTA_* no Render).`, {
       produtoId,
       codigoOferta,
       nomePlano,
@@ -120,17 +141,42 @@ export async function POST(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const { error } = await supabase.rpc('processar_compra_hotmart', {
-    p_email: email,
-    p_tipo: tipo,
-    p_quantidade: quantidade,
-    p_segredo: segredoInterno,
-    p_transacao: transacao,
-    p_renovacao: renovacao,
-  })
+  let resposta
+  if (eCompra) {
+    resposta = await supabase.rpc('processar_compra_hotmart', {
+      p_email: email,
+      p_tipo: tipo,
+      p_quantidade: quantidade,
+      p_segredo: segredoInterno,
+      p_transacao: transacao,
+      p_renovacao: renovacao,
+      p_chave: chaveAssinatura,
+    })
+  } else if (eCancelamento) {
+    // date_next_charge = fim do período já pago; se não vier, o banco assume 32 dias após o último pagamento
+    const fimDoPeriodo = paraDataIso(dados.date_next_charge ?? dados.subscription?.date_next_charge ?? dados.purchase?.date_next_charge)
+    resposta = await supabase.rpc('cancelar_assinatura_hotmart', {
+      p_email: email,
+      p_tipo: tipo,
+      p_segredo: segredoInterno,
+      p_chave: chaveAssinatura,
+      p_acesso_ate: fimDoPeriodo,
+    })
+  } else {
+    resposta = await supabase.rpc('encerrar_assinatura_hotmart', {
+      p_email: email,
+      p_tipo: tipo,
+      p_segredo: segredoInterno,
+      p_chave: chaveAssinatura,
+      p_quantidade: quantidade,
+      p_transacao: transacao,
+    })
+  }
+
+  const { error } = resposta
 
   if (error) {
-    console.error('Erro ao processar compra do Hotmart:', error)
+    console.error(`Erro ao processar ${evento} do Hotmart:`, error)
     // Problemas que não se resolvem com nova tentativa (comprador sem conta com esse e-mail, links
     // avulsos sem plano pago): responde 2xx para o Hotmart não desativar o webhook. Confira no log do Render.
     if (/não encontrado|exige um plano pago/i.test(error.message)) {

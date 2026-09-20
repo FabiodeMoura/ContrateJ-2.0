@@ -1,0 +1,12 @@
+-- Ajustes v64 — JÁ APLICADOS no projeto Supabase "contrateja" (registro).
+-- Cancelamento e reembolso das assinaturas do Hotmart.
+--  * tabela assinaturas_hotmart: uma linha por assinatura (código do assinante); plano, limites e equipe
+--    são recalculados a partir das assinaturas ativas (recalcular_assinatura);
+--  * cada cobrança aprovada zera os links usados do mês; renovação da mesma assinatura não soma empresa;
+--  * cancelar_assinatura_hotmart: agenda o fim do acesso (fim do período pago);
+--  * encerrar_assinatura_hotmart: reembolso/chargeback encerra na hora (ou desconta links avulsos);
+--  * expirar_assinaturas_hotmart: roda todo dia às 06:00 UTC (pg_cron) e também ao gerar um link;
+--  * equipe.status aceita "Suspenso": ao acabar o plano, usuários vinculados perdem o acesso (dados preservados)
+--    e voltam ao assinar de novo;
+--  * o segredo do webhook fica na tabela configuracao_interna (chave 'hotmart_segredo_interno'), sem acesso pela API.
+-- O SQL completo está no histórico de migrações do Supabase (nome: assinaturas_hotmart_cancelamento_reembolso).

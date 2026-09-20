@@ -160,9 +160,13 @@ export default async function EquipePage({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${
-                            m.status === 'Ativo' ? 'text-green-600 bg-green-50' : 'text-amber-600 bg-amber-50'
+                            m.status === 'Ativo'
+                              ? 'text-green-600 bg-green-50'
+                              : m.status === 'Suspenso'
+                              ? 'text-red-600 bg-red-50'
+                              : 'text-amber-600 bg-amber-50'
                           }`}>
-                            {m.status === 'Ativo' ? 'Ativo' : 'Aguardando cadastro'}
+                            {m.status === 'Ativo' ? 'Ativo' : m.status === 'Suspenso' ? 'Suspenso (plano encerrado)' : 'Aguardando cadastro'}
                           </span>
                           <RemoverMembroButton id={m.id} />
                         </div>
