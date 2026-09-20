@@ -372,6 +372,16 @@ export default function LoginPage() {
               </button>
             </form>
           )}
+
+          <div className="mt-8 pt-5 border-t text-center space-y-1">
+            <p className="text-xs text-gray-500">
+              Precisa de ajuda?{' '}
+              <a href="mailto:suporte@contrateja.app.br" className="font-medium text-indigo-600 hover:underline">
+                suporte@contrateja.app.br
+              </a>
+            </p>
+            <p className="text-[11px] text-gray-400">Desenvolvido por Fábio de Moura</p>
+          </div>
         </div>
       </div>
     </div>

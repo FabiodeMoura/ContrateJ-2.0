@@ -67,6 +67,12 @@ export default function Sidebar({ ativo }: { ativo: string }) {
           <p className="text-lg text-white font-bold leading-snug drop-shadow-sm">
             "{fraseDoDia()}"
           </p>
+          <p className="relative mt-3 text-xs text-white/90">
+            <span className="font-semibold">Suporte:</span>{' '}
+            <a href="mailto:suporte@contrateja.app.br" className="underline underline-offset-2 hover:text-white">
+              suporte@contrateja.app.br
+            </a>
+          </p>
           <img
             src="/developer-banner.jpg"
             alt="Desenvolvedor Fábio de Moura"
