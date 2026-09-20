@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import { createClient as criarClienteRecuperacao } from '@supabase/supabase-js'
 import { MARCA, VALORES_LOGIN } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
 import { apenasDigitos, formatarCnpj } from '@/lib/validarCnpj'
@@ -14,8 +15,16 @@ export default function LoginPage() {
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState<string | null>(null)
+  const [aguardar, setAguardar] = useState(0) // segundos até poder pedir outro link
   const router = useRouter()
   const supabase = createClient()
+
+  // Contagem regressiva do pedido de recuperação (o Supabase só aceita 1 pedido por minuto)
+  useEffect(() => {
+    if (aguardar <= 0) return
+    const t = setTimeout(() => setAguardar((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [aguardar])
 
   // Campos de login
   const [email, setEmail] = useState('')
@@ -118,12 +127,28 @@ export default function LoginPage() {
 
   async function recuperarSenha(e: React.FormEvent) {
     e.preventDefault()
+    if (carregando || aguardar > 0) return // evita pedido duplicado (2 cliques seguidos)
     setCarregando(true)
     setErro(null)
     setSucesso(null)
 
     const origem = typeof window !== 'undefined' ? window.location.origin : ''
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Cliente próprio, sem PKCE: o link do e-mail traz o acesso direto e abre em qualquer
+    // navegador ou aparelho (o formato PKCE só funcionava no mesmo navegador do pedido).
+    const clienteRecuperacao = criarClienteRecuperacao(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'implicit',
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          storageKey: 'sb-recuperacao-senha',
+        },
+      }
+    )
+    const { error } = await clienteRecuperacao.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: `${origem}/redefinir-senha`,
     })
 
@@ -131,11 +156,17 @@ export default function LoginPage() {
 
     if (error) {
       console.error('Erro ao enviar recuperação de senha:', error)
-      setErro(error.message || 'Não foi possível enviar o link. Confira o e-mail digitado.')
+      if (error.status === 429) {
+        setAguardar(60)
+        setErro('Você acabou de pedir um link. Aguarde 1 minuto e confira sua caixa de entrada e o spam.')
+      } else {
+        setErro(error.message || 'Não foi possível enviar o link. Confira o e-mail digitado.')
+      }
       return
     }
 
-    setSucesso('Enviamos um link de recuperação para o seu e-mail. Confira também a caixa de spam.')
+    setAguardar(60)
+    setSucesso('Se esse e-mail tiver conta, enviamos um link de recuperação. Confira também a caixa de spam.')
   }
 
   return (
@@ -327,10 +358,10 @@ export default function LoginPage() {
               {erro && <p className="text-red-600 text-xs">{erro}</p>}
               {sucesso && <p className="text-green-700 text-xs bg-green-50 rounded-md px-3 py-2">{sucesso}</p>}
               <button
-                disabled={carregando}
+                disabled={carregando || aguardar > 0}
                 className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium disabled:opacity-60"
               >
-                {carregando ? 'Enviando...' : 'Enviar link de recuperação'}
+                {carregando ? 'Enviando...' : aguardar > 0 ? `Aguarde ${aguardar}s para pedir de novo` : 'Enviar link de recuperação'}
               </button>
               <button
                 type="button"

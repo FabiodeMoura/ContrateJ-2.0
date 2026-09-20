@@ -1,64 +1,89 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
-import { MARCA } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
 
-function RedefinirSenhaConteudo() {
+export default function RedefinirSenhaPage() {
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [validandoLink, setValidandoLink] = useState(true)
+  const [temSessao, setTemSessao] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
-  // Pega o token de recuperação direto da URL (seja no formato "#access_token="
-  // ou "?code=") e cria a sessão manualmente. Não depende de nenhuma
-  // detecção automática do Supabase, que era onde travava antes.
+  // Valida o link de recuperação. Aceita os formatos que o Supabase pode mandar:
+  // "#access_token=..." (funciona em qualquer navegador/aparelho), "?code=..." e "?token_hash=...".
+  // O formulário de nova senha só aparece quando existe uma sessão de recuperação válida.
   useEffect(() => {
     async function validar() {
-      // Formato mais comum pro link de recuperação: token vem depois de "#"
-      const hash = typeof window !== 'undefined' ? window.location.hash : ''
-      if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.replace('#', ''))
-        const access_token = params.get('access_token')
-        const refresh_token = params.get('refresh_token')
+      try {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+        const query = new URLSearchParams(window.location.search)
 
+        // 0) O próprio Supabase avisou que o link não vale mais (expirou ou já foi usado)
+        if (hashParams.get('error') || hashParams.get('error_code') || query.get('error') || query.get('error_code')) {
+          setErro('Este link expirou ou já foi usado. Volte ao login e peça um novo link.')
+          return
+        }
+
+        // 1) Link no formato "#access_token=..."
+        const access_token = hashParams.get('access_token')
+        const refresh_token = hashParams.get('refresh_token')
         if (access_token && refresh_token) {
           const { error } = await supabase.auth.setSession({ access_token, refresh_token })
           if (error) {
             console.error('Erro ao criar sessão a partir do link:', error)
-            setErro('Não foi possível validar o link: ' + error.message)
+            setErro('Não foi possível validar o link. Volte ao login e peça um novo.')
+            return
           }
-          setValidandoLink(false)
+          window.history.replaceState(null, '', window.location.pathname)
+          setTemSessao(true)
           return
         }
-      }
 
-      // Formato alternativo: "?code=" na URL
-      const code = searchParams.get('code')
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          console.error('Erro ao trocar código por sessão:', error)
-          setErro('Não foi possível validar o link: ' + error.message)
+        // 2) Link no formato "?code=..." (só funciona no mesmo navegador em que o pedido foi feito)
+        const code = query.get('code')
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) {
+            console.error('Erro ao trocar código por sessão:', error)
+            setErro('Não foi possível validar o link. Volte ao login, peça um novo link e abra no mesmo aparelho e navegador.')
+            return
+          }
+          window.history.replaceState(null, '', window.location.pathname)
+          setTemSessao(true)
+          return
         }
-        setValidandoLink(false)
-        return
-      }
 
-      // Nenhum dos dois formatos veio na URL — confere se por acaso já
-      // existe uma sessão válida antes de desistir
-      const { data } = await supabase.auth.getSession()
-      if (!data.session) {
-        setErro('Link inválido ou incompleto. Volte no login e peça um novo.')
+        // 3) Link no formato "?token_hash=...&type=recovery"
+        const tokenHash = query.get('token_hash')
+        if (tokenHash && query.get('type') === 'recovery') {
+          const { error } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash })
+          if (error) {
+            console.error('Erro ao validar token de recuperação:', error)
+            setErro('Este link expirou ou já foi usado. Volte ao login e peça um novo link.')
+            return
+          }
+          window.history.replaceState(null, '', window.location.pathname)
+          setTemSessao(true)
+          return
+        }
+
+        // 4) Nenhum formato veio na URL: confere se já existe uma sessão válida
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          setTemSessao(true)
+          return
+        }
+        setErro('Link inválido ou incompleto. Volte ao login e peça um novo link.')
+      } finally {
+        setValidandoLink(false)
       }
-      setValidandoLink(false)
     }
 
     validar()
@@ -83,7 +108,12 @@ function RedefinirSenhaConteudo() {
 
     if (error) {
       console.error('Erro ao atualizar senha:', error)
-      setErro(error.message || 'Não foi possível atualizar a senha. O link pode ter expirado — solicite um novo.')
+      if (/session missing/i.test(error.message)) {
+        setTemSessao(false)
+        setErro('O link de recuperação expirou. Volte ao login e peça um novo link.')
+      } else {
+        setErro(error.message || 'Não foi possível atualizar a senha. O link pode ter expirado — solicite um novo.')
+      }
       return
     }
 
@@ -110,6 +140,18 @@ function RedefinirSenhaConteudo() {
             </div>
           ) : validandoLink ? (
             <p className="text-sm text-gray-500 text-center py-4">Verificando link...</p>
+          ) : !temSessao ? (
+            <div className="text-center py-2">
+              <p className="text-2xl mb-2">⚠️</p>
+              <p className="text-sm font-medium mb-1">Não foi possível abrir este link</p>
+              <p className="text-xs text-gray-500 mb-4">{erro}</p>
+              <a
+                href="/login"
+                className="inline-block w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium"
+              >
+                Voltar ao login e pedir novo link
+              </a>
+            </div>
           ) : (
             <form onSubmit={salvar} className="space-y-3">
               <h2 className="text-lg font-semibold">Criar nova senha</h2>
@@ -141,13 +183,5 @@ function RedefinirSenhaConteudo() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function RedefinirSenhaPage() {
-  return (
-    <Suspense fallback={null}>
-      <RedefinirSenhaConteudo />
-    </Suspense>
   )
 }
