@@ -21,8 +21,8 @@ const PLANOS = [
     limite: 50,
     destaque: true,
     beneficios: ['50 links de avaliação por mês', 'Libera o cadastro de +1 empresa', '2 usuários adicionais por empresa', 'Tudo do plano gratuito', 'Suporte prioritário'],
-    // Troque pelo link de checkout real do produto no Hotmart
-    linkHotmart: 'https://pay.hotmart.com/SEU-PRODUTO-79',
+    // Oferta do Plano 79,90 no Hotmart (código rmvg7vx3)
+    linkHotmart: 'https://pay.hotmart.com/P107694053P?off=rmvg7vx3',
   },
   {
     nome: 'Plano 99',
@@ -31,8 +31,8 @@ const PLANOS = [
     limite: 80,
     destaque: false,
     beneficios: ['80 links de avaliação por mês', 'Libera o cadastro de +1 empresa', '2 usuários adicionais por empresa', 'Tudo do plano anterior', 'Suporte prioritário'],
-    // Troque pelo link de checkout real do produto no Hotmart
-    linkHotmart: 'https://pay.hotmart.com/SEU-PRODUTO-99',
+    // Oferta do Plano 99,90 no Hotmart (código 0t7jof3k)
+    linkHotmart: 'https://pay.hotmart.com/P107694053P?off=0t7jof3k',
   },
 ]
 

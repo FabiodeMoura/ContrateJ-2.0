@@ -2,11 +2,20 @@
 
 import { useState } from 'react'
 
-// Troque pelo link de checkout real do produto "link avulso" no Hotmart
-const LINK_HOTMART_AVULSO = 'https://pay.hotmart.com/SEU-PRODUTO-AVULSO'
+// Cole aqui o link de pagamento do produto "links avulsos" do Hotmart quando ele existir.
+// Enquanto estiver vazio, o botão aparece como "Em breve" (sem link quebrado).
+const LINK_HOTMART_AVULSO = ''
 
 export default function ComprarLinksExtrasButton() {
   const [quantidade, setQuantidade] = useState(5)
+
+  if (!LINK_HOTMART_AVULSO) {
+    return (
+      <span className="inline-block text-sm font-medium text-gray-400 border rounded-lg px-4 py-2">
+        Em breve: links avulsos por R$ 3,00 cada
+      </span>
+    )
+  }
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">

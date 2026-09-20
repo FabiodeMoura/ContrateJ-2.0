@@ -12,9 +12,11 @@ import { createClient } from '@supabase/supabase-js'
 // 4. Para o sistema saber qual plano é qual, defina no Render:
 //    - Se os planos ficarem em produtos separados: o ID de cada produto
 //      (HOTMART_ID_PLANO_79, HOTMART_ID_PLANO_99).
-//    - Se os dois planos ficarem no MESMO produto: o código de cada oferta
-//      (HOTMART_OFERTA_PLANO_79, HOTMART_OFERTA_PLANO_99). O código é o trecho
-//      depois de "off=" no link de pagamento da oferta.
+//    - Se os dois planos ficarem no MESMO produto: defina HOTMART_ID_PRODUTO_ASSINATURA
+//      com o ID do produto. Cada plano é reconhecido pelo nome dele no Hotmart:
+//      o nome precisa conter "79,90" (Plano 79) ou "99,90" (Plano 99).
+//      Alternativa: o código de cada oferta (HOTMART_OFERTA_PLANO_79 / _99), que é o
+//      trecho depois de "off=" no link de pagamento.
 //    - Links avulsos (produto de pagamento único): HOTMART_ID_LINKS_AVULSOS
 // 5. HOTMART_SEGREDO_INTERNO (Render): senha entre este site e o banco de dados.
 //    NUNCA escreva esse valor no código nem no GitHub. Se precisar trocar, altere
@@ -78,6 +80,18 @@ export async function POST(request: NextRequest) {
   if (codigoOferta && codigoOferta === process.env.HOTMART_OFERTA_PLANO_79) {
     tipo = 'plano_79'
   } else if (codigoOferta && codigoOferta === process.env.HOTMART_OFERTA_PLANO_99) {
+    tipo = 'plano_99'
+  } else if (
+    process.env.HOTMART_ID_PRODUTO_ASSINATURA &&
+    produtoId === process.env.HOTMART_ID_PRODUTO_ASSINATURA &&
+    nomePlano.includes('79,90')
+  ) {
+    tipo = 'plano_79'
+  } else if (
+    process.env.HOTMART_ID_PRODUTO_ASSINATURA &&
+    produtoId === process.env.HOTMART_ID_PRODUTO_ASSINATURA &&
+    nomePlano.includes('99,90')
+  ) {
     tipo = 'plano_99'
   } else if (produtoId && produtoId === process.env.HOTMART_ID_PLANO_79) {
     tipo = 'plano_79'
