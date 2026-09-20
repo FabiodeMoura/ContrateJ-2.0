@@ -81,7 +81,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!tipo) {
-    return NextResponse.json({ erro: `Produto ${produtoId} não reconhecido` }, { status: 400 })
+    // Responde 2xx de propósito: se o Hotmart receber erro, ele desativa sozinho a configuração do
+    // webhook. O aviso fica registrado no log do Render.
+    console.error(`Webhook do Hotmart: produto ${produtoId} não reconhecido (confira HOTMART_ID_* no Render).`)
+    return NextResponse.json({ ok: true, ignorado: `produto ${produtoId} não reconhecido` })
   }
 
   const supabase = createClient(
@@ -100,6 +103,11 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('Erro ao processar compra do Hotmart:', error)
+    // Problemas que não se resolvem com nova tentativa (comprador sem conta com esse e-mail, links
+    // avulsos sem plano pago): responde 2xx para o Hotmart não desativar o webhook. Confira no log do Render.
+    if (/não encontrado|exige um plano pago/i.test(error.message)) {
+      return NextResponse.json({ ok: false, erro: error.message })
+    }
     return NextResponse.json({ erro: error.message }, { status: 500 })
   }
 
