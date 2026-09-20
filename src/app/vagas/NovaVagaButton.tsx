@@ -6,13 +6,16 @@ import { createClient } from '@/lib/supabaseClient'
 import { verificarEIncrementarUso } from '@/lib/usoLinks'
 
 export default function NovaVagaButton({
-  empresaId,
+  empresas,
+  empresaIdPadrao,
   perfis,
 }: {
-  empresaId: string
+  empresas: { id: string; nome_fantasia: string }[]
+  empresaIdPadrao: string
   perfis: { id: string; funcao: string }[]
 }) {
   const [aberto, setAberto] = useState(false)
+  const [empresaEscolhida, setEmpresaEscolhida] = useState(empresaIdPadrao)
   const [perfilId, setPerfilId] = useState(perfis[0]?.id ?? '')
   const [criando, setCriando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -45,7 +48,7 @@ export default function NovaVagaButton({
     const perfil = perfis.find((p) => p.id === perfilId)
 
     const { error } = await supabase.from('vagas').insert({
-      empresa_id: empresaId,
+      empresa_id: empresaEscolhida,
       perfil_disc_id: perfilId,
       funcao: perfil?.funcao ?? '',
     })
@@ -53,7 +56,12 @@ export default function NovaVagaButton({
     setCriando(false)
     if (!error) {
       setAberto(false)
-      router.refresh()
+      // Se a vaga foi criada para outra empresa, mostra a lista dela.
+      if (empresaEscolhida !== empresaIdPadrao) {
+        router.push(`/vagas?empresa=${empresaEscolhida}`)
+      } else {
+        router.refresh()
+      }
     } else {
       setErro('Não foi possível criar a vaga. Tente novamente.')
     }
@@ -62,7 +70,10 @@ export default function NovaVagaButton({
   return (
     <>
       <button
-        onClick={() => setAberto(true)}
+        onClick={() => {
+          setEmpresaEscolhida(empresaIdPadrao)
+          setAberto(true)
+        }}
         className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 w-full sm:w-auto"
       >
         + Nova vaga
@@ -71,6 +82,20 @@ export default function NovaVagaButton({
       {aberto && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-20 p-4">
           <div className="bg-white rounded-xl p-5 w-full max-w-xs">
+            {empresas.length > 1 && (
+              <>
+                <p className="font-medium text-sm mb-3">Para qual empresa é a vaga?</p>
+                <select
+                  className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
+                  value={empresaEscolhida}
+                  onChange={(e) => setEmpresaEscolhida(e.target.value)}
+                >
+                  {empresas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.nome_fantasia}</option>
+                  ))}
+                </select>
+              </>
+            )}
             <p className="font-medium text-sm mb-3">Selecione a função</p>
             <select
               className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
@@ -90,7 +115,7 @@ export default function NovaVagaButton({
               </button>
               <button
                 onClick={criarVaga}
-                disabled={criando}
+                disabled={criando || !empresaEscolhida}
                 className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm disabled:opacity-60"
               >
                 {criando ? 'Criando...' : 'Gerar link'}

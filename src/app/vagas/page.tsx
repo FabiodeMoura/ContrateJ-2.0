@@ -50,7 +50,7 @@ export default async function VagasPage({
               <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
             )}
             {empresaId && perfis && (
-              <NovaVagaButton empresaId={empresaId} perfis={perfis} />
+              <NovaVagaButton empresas={empresas ?? []} empresaIdPadrao={empresaId} perfis={perfis} />
             )}
           </div>
         </div>
