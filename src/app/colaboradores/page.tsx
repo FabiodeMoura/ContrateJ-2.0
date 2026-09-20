@@ -20,9 +20,8 @@ export default async function ColaboradoresPage({
   if (!user) redirect('/login')
 
   const { data: empresas } = await supabase
-    .from('empresas')
+    .from('minhas_empresas')
     .select('id, nome_fantasia')
-    .eq('dono_id', user.id)
 
   const filtroEmpresa = searchParams.empresa ?? 'todas'
   const empresaIds = filtroEmpresa === 'todas'

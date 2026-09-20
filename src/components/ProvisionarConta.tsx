@@ -18,7 +18,7 @@ export default function ProvisionarConta() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: empresas } = await supabase.from('empresas').select('id').limit(1)
+      const { data: empresas } = await supabase.from('minhas_empresas').select('id').limit(1)
       if (empresas && empresas.length > 0) return // já tem conta, nada a fazer
 
       // Primeiro tenta como convite de equipe

@@ -33,9 +33,8 @@ export default async function DashboardPage({
   const nomeUsuario = (user.user_metadata as any)?.nome ?? user.email?.split('@')[0] ?? 'Gestor'
 
   const { data: empresas } = await supabase
-    .from('empresas')
+    .from('minhas_empresas')
     .select('id, nome_fantasia, segmento_principal')
-    .eq('dono_id', user.id)
 
   const temVariasEmpresas = (empresas?.length ?? 0) > 1
   const filtroEmpresa = searchParams.empresa ?? (temVariasEmpresas ? 'todas' : empresas?.[0]?.id) ?? 'todas'

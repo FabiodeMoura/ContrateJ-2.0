@@ -14,11 +14,8 @@ export default async function QuizPage({
 
   if (!candidatoId) return notFound()
 
-  const { data: vaga } = await supabase
-    .from('vagas')
-    .select('id, funcao, perfil_disc_id, empresas ( nome_fantasia )')
-    .eq('token_link', params.token)
-    .single()
+  const { data: vagas } = await supabase.rpc('vaga_publica', { p_token: params.token })
+  const vaga = vagas?.[0]
 
   if (!vaga) return notFound()
 
@@ -33,8 +30,7 @@ export default async function QuizPage({
       token={params.token}
       candidatoId={candidatoId}
       funcao={vaga.funcao}
-      // @ts-expect-error - relação aninhada do Supabase
-      nomeEmpresa={vaga.empresas?.nome_fantasia ?? ''}
+      nomeEmpresa={vaga.empresa_nome ?? ''}
       perguntas={perguntas ?? []}
     />
   )

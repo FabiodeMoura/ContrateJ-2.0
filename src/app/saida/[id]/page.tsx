@@ -5,11 +5,8 @@ import PesquisaSaidaClient from './PesquisaSaidaClient'
 export default async function SaidaPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabase()
 
-  const { data: colaborador } = await supabase
-    .from('colaboradores_publico')
-    .select('id, nome_completo, empresa_nome')
-    .eq('id', params.id)
-    .single()
+  const { data: colaboradores } = await supabase.rpc('colaborador_publico', { p_id: params.id })
+  const colaborador = colaboradores?.[0]
 
   if (!colaborador) return notFound()
 

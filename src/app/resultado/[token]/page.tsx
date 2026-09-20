@@ -7,11 +7,8 @@ import BannerCandidato from '@/components/BannerCandidato'
 export default async function ResultadoPage({ params }: { params: { token: string } }) {
   const supabase = createServerSupabase()
 
-  const { data: candidato } = await supabase
-    .from('candidatos')
-    .select('nome_completo, percentual_aderencia, vagas ( funcao, empresas ( nome_fantasia ) )')
-    .eq('id', params.token)
-    .single()
+  const { data: resultados } = await supabase.rpc('resultado_publico', { p_candidato_id: params.token })
+  const candidato = resultados?.[0]
 
   if (!candidato) return notFound()
 
@@ -51,8 +48,7 @@ export default async function ResultadoPage({ params }: { params: { token: strin
 
         <div className="border-t pt-4 text-left text-sm">
           <p className="text-xs text-gray-500">Vaga</p>
-          {/* @ts-expect-error - relação aninhada */}
-          <p className="font-medium mb-2">{candidato.vagas?.funcao} — {candidato.vagas?.empresas?.nome_fantasia}</p>
+          <p className="font-medium mb-2">{candidato.funcao} — {candidato.empresa_nome}</p>
           <p className="text-xs text-gray-500">Candidato</p>
           <p className="font-medium">{candidato.nome_completo}</p>
         </div>

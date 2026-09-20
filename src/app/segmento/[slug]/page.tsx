@@ -103,9 +103,8 @@ export default async function SegmentoPage({
   if (!user) redirect('/login')
 
   const { data: empresas } = await supabase
-    .from('empresas')
+    .from('minhas_empresas')
     .select('id, nome_fantasia')
-    .eq('dono_id', user.id)
 
   const { data: perfis } = await supabase
     .from('perfis_disc')

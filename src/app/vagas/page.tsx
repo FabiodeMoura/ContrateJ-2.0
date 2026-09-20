@@ -18,9 +18,8 @@ export default async function VagasPage({
   if (!user) redirect('/login')
 
   const { data: empresas } = await supabase
-    .from('empresas')
+    .from('minhas_empresas')
     .select('id, nome_fantasia, segmento_principal')
-    .eq('dono_id', user.id)
 
   const empresaId = searchParams.empresa ?? empresas?.[0]?.id
   const empresaAtual = empresas?.find((e) => e.id === empresaId)

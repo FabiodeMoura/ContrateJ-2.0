@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
   const email = corpo?.data?.buyer?.email
   const produtoId = String(corpo?.data?.product?.id ?? '')
   const valorTotal = corpo?.data?.purchase?.price?.value ?? corpo?.data?.purchase?.full_price?.value
+  // Identifica a transação (para não contar duas vezes o mesmo aviso) e se é
+  // renovação mensal (recurrence_number > 1), que não libera empresa nova.
+  const transacao = corpo?.data?.purchase?.transaction ? String(corpo.data.purchase.transaction) : null
+  const renovacao = Number(corpo?.data?.purchase?.recurrence_number ?? 1) > 1
 
   if (evento !== 'PURCHASE_APPROVED' && evento !== 'PURCHASE_COMPLETE') {
     // Ignora cancelamentos/reembolsos por enquanto — só confirma o recebimento
@@ -71,6 +75,8 @@ export async function POST(request: NextRequest) {
     p_tipo: tipo,
     p_quantidade: quantidade,
     p_segredo: SEGREDO_INTERNO,
+    p_transacao: transacao,
+    p_renovacao: renovacao,
   })
 
   if (error) {

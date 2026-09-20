@@ -6,11 +6,9 @@ import FormularioCandidato from './FormularioCandidato'
 export default async function AvaliarPage({ params }: { params: { token: string } }) {
   const supabase = createServerSupabase()
 
-  const { data: vaga } = await supabase
-    .from('vagas')
-    .select('id, funcao, link_usado, empresas ( nome_fantasia, logo_url )')
-    .eq('token_link', params.token)
-    .single()
+  // Busca só a vaga do link recebido (função do banco, sem ler a tabela inteira)
+  const { data: vagas } = await supabase.rpc('vaga_publica', { p_token: params.token })
+  const vaga = vagas?.[0]
 
   if (!vaga) return notFound()
 
@@ -32,8 +30,7 @@ export default async function AvaliarPage({ params }: { params: { token: string 
     <FormularioCandidato
       vagaId={vaga.id}
       funcao={vaga.funcao}
-      // @ts-expect-error - relação aninhada do Supabase
-      nomeEmpresa={vaga.empresas?.nome_fantasia ?? ''}
+      nomeEmpresa={vaga.empresa_nome ?? ''}
       token={params.token}
     />
   )
