@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import EmpresaSelector from '@/components/EmpresaSelector'
-import { PERGUNTAS_SAIDA, PONTOS_DE_ATENCAO } from '@/lib/perguntasSaida'
+import { PERGUNTAS_SAIDA, PONTOS_DE_ATENCAO, TITULO_CURTO } from '@/lib/perguntasSaida'
 
 export default async function RelatoriosPage({
   searchParams,
@@ -142,12 +142,31 @@ export default async function RelatoriosPage({
       motivosPorFuncao[funcao][r.resposta] = (motivosPorFuncao[funcao][r.resposta] ?? 0) + 1
     })
 
+  // Cores das respostas: verde = positivo, amarelo = meio termo, vermelho = negativo.
   const CORES_MOTIVO: Record<string, string> = {
+    // motivos da saída (pergunta 9)
     'Salário': 'bg-red-500',
     'Ambiente de trabalho': 'bg-orange-500',
     'Gestão/liderança': 'bg-amber-500',
     'Oportunidade em outro lugar': 'bg-teal-500',
     'Outro motivo': 'bg-gray-400',
+    // demais perguntas
+    'Ótima': 'bg-green-600',
+    'Ótimo': 'bg-green-600',
+    'Boa': 'bg-green-400',
+    'Bom': 'bg-green-400',
+    'Sim': 'bg-green-500',
+    'Sim, com certeza': 'bg-green-500',
+    'Sempre': 'bg-green-500',
+    'Regular': 'bg-amber-400',
+    'Talvez': 'bg-amber-400',
+    'Às vezes': 'bg-amber-400',
+    'Parcialmente': 'bg-amber-400',
+    'Ruim': 'bg-red-500',
+    'Não': 'bg-red-500',
+    'Raramente': 'bg-red-500',
+    'Nunca': 'bg-red-600',
+    'Não sei dizer': 'bg-gray-300',
   }
 
   // Turnover geral e quebra por tipo de desligamento (Pediu demissão x Foi demitido)
@@ -250,13 +269,13 @@ export default async function RelatoriosPage({
           ))}
         </div>
 
-        {/* Turnover: totais, tipo de desligamento e respostas da entrevista de saída */}
+        {/* Turnover: resumo visual + entrevista de desligamento */}
         <div id="turnover" className="bg-white rounded-xl border p-4 mt-6 scroll-mt-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <p className="font-medium text-sm mb-1">Turnover</p>
               <p className="text-xs text-gray-400">
-                Colaboradores efetivados e entrevista de desligamento — <strong>{nomeEscopoTurnover}</strong>
+                Colaboradores e entrevista de desligamento — <strong>{nomeEscopoTurnover}</strong>
               </p>
             </div>
             {listaEmpresas.length > 1 && (
@@ -274,152 +293,127 @@ export default async function RelatoriosPage({
             <p className="text-xs text-gray-400">Nenhum colaborador cadastrado para {nomeEscopoTurnover}.</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                <MiniKpi label="Colaboradores" valor={`${totalColaboradores}`} />
-                <MiniKpi label="Desligados" valor={`${totalDesligados}`} />
-                <MiniKpi label="Turnover" valor={`${turnoverGeral}%`} />
-                <MiniKpi label="Pediu demissão x Foi demitido" valor={`${pedidosDemissao} x ${demissoes}`} />
+              {/* Resumo: anel do turnover + números */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
+                <AnelTurnover valor={turnoverGeral} />
+                <div className="grid grid-cols-3 gap-3 flex-1">
+                  <MiniKpi icone="👥" label="Colaboradores" valor={`${totalColaboradores}`} />
+                  <MiniKpi icone="🚪" label="Desligados" valor={`${totalDesligados}`} />
+                  <MiniKpi icone="🔁" label="Pediu demissão x Foi demitido" valor={`${pedidosDemissao} x ${demissoes}`} />
+                </div>
               </div>
 
-              {Object.keys(tipoPorFuncao).length > 0 && (
-                <div className="space-y-5 mb-6">
-                  <p className="text-xs font-medium text-gray-600">Tipo de desligamento por função</p>
-                  {Object.entries(tipoPorFuncao).map(([funcao, tipos]) => {
-                    const totalTipos = Object.values(tipos).reduce((a, b) => a + b, 0)
-                    return (
-                      <div key={funcao}>
-                        <p className="text-sm font-medium mb-2">{funcao}</p>
-                        <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
-                          {Object.entries(tipos).map(([tipo, qtd]) => (
-                            <div
-                              key={tipo}
-                              className={CORES_TIPO[tipo] ?? 'bg-gray-400'}
-                              style={{ width: `${(qtd / totalTipos) * 100}%` }}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                          {Object.entries(tipos).map(([tipo, qtd]) => (
-                            <span key={tipo} className="flex items-center gap-1.5">
-                              <span className={`w-2.5 h-2.5 rounded-full ${CORES_TIPO[tipo] ?? 'bg-gray-400'}`} />
-                              {tipo} — <strong>{qtd}</strong>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+              {/* Como saíram + principal motivo, lado a lado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <BarrasPorFuncao
+                  titulo="Como saíram"
+                  dados={tipoPorFuncao}
+                  cores={CORES_TIPO}
+                  geral={{ 'Pediu demissão': pedidosDemissao, 'Foi demitido': demissoes }}
+                  vazio="Nenhum desligamento registrado."
+                />
+                <BarrasPorFuncao
+                  titulo="Principal motivo da saída"
+                  dados={motivosPorFuncao}
+                  cores={CORES_MOTIVO}
+                  geral={contagemPorPergunta[9]}
+                  vazio="Aguardando as respostas da pesquisa."
+                />
+              </div>
 
               {totalRespondentes === 0 ? (
                 <p className="text-xs text-gray-400 pt-4 border-t">
-                  Ainda não há respostas da pesquisa de desligamento. Assim que os colaboradores desligados
+                  Ainda não há respostas da pesquisa de desligamento. Quando os colaboradores desligados
                   responderem, os pontos apontados aparecem aqui, somados e em percentual.
                 </p>
               ) : (
                 <>
-                  {/* Pontos apontados: soma de quem citou cada problema */}
-                  <div className="pt-5 border-t mb-6">
-                    <p className="text-xs font-medium text-gray-600">Pontos apontados pelos colaboradores</p>
-                    <p className="text-[11px] text-gray-400 mb-3">
-                      {textoColaboradores(totalRespondentes)} {totalRespondentes === 1 ? 'respondeu' : 'responderam'} a
-                      pesquisa de desligamento. O percentual considera quem respondeu cada pergunta.
-                    </p>
+                  {/* Pontos apontados: um card por ponto, com o percentual em destaque */}
+                  <div className="pt-4 border-t mb-5">
+                    <div className="flex items-baseline justify-between gap-3 mb-3">
+                      <p className="text-xs font-medium text-gray-600">Pontos apontados</p>
+                      <p className="text-[11px] text-gray-400">
+                        {textoColaboradores(totalRespondentes)} {totalRespondentes === 1 ? 'respondeu' : 'responderam'} a pesquisa
+                      </p>
+                    </div>
                     {pontosApontados.length === 0 ? (
                       <p className="text-xs text-gray-400">Nenhum ponto negativo apontado até agora.</p>
                     ) : (
-                      pontosApontados.map((ponto) => (
-                        <div key={ponto.ordem} className="mb-3">
-                          <div className="flex justify-between gap-3 text-sm mb-1">
-                            <span>
-                              <strong>{fraseApontaram(ponto.quantidade)}</strong> {ponto.frase}
-                            </span>
-                            <span className="font-semibold text-gray-700">{ponto.percentual}%</span>
-                          </div>
-                          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${ponto.percentual}%` }} />
-                          </div>
-                        </div>
-                      ))
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {pontosApontados.map((ponto) => {
+                          const tom =
+                            ponto.percentual >= 50
+                              ? { card: 'border-red-200 bg-red-50', numero: 'text-red-700', barra: 'bg-red-400' }
+                              : ponto.percentual >= 25
+                              ? { card: 'border-amber-200 bg-amber-50', numero: 'text-amber-700', barra: 'bg-amber-400' }
+                              : { card: 'border-yellow-200 bg-yellow-50', numero: 'text-yellow-700', barra: 'bg-yellow-400' }
+                          return (
+                            <div key={ponto.ordem} className={`rounded-xl border p-3 ${tom.card}`}>
+                              <p className={`text-3xl font-bold leading-none ${tom.numero}`}>{ponto.percentual}%</p>
+                              <p className="text-xs text-gray-700 mt-2">
+                                <strong>{fraseApontaram(ponto.quantidade)}</strong> {ponto.frase}
+                              </p>
+                              <div className="h-1.5 bg-white/70 rounded-full overflow-hidden mt-2.5">
+                                <div className={`h-full rounded-full ${tom.barra}`} style={{ width: `${ponto.percentual}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
 
-                  {/* Todas as perguntas da pesquisa, com soma e percentual por resposta */}
-                  <div className="pt-5 border-t mb-6">
-                    <p className="text-xs font-medium text-gray-600 mb-3">Todas as respostas da pesquisa de desligamento</p>
-                    {PERGUNTAS_SAIDA.map((pergunta) => {
-                      const contagem = contagemPorPergunta[pergunta.ordem] ?? {}
-                      const base = totalPorPergunta(pergunta.ordem)
-                      return (
-                        <details key={pergunta.ordem} open className="border rounded-lg mb-2">
-                          <summary className="cursor-pointer text-sm font-medium px-3 py-2">
-                            {pergunta.ordem}. {pergunta.texto}{' '}
-                            <span className="text-xs text-gray-400 font-normal">
-                              ({base} {base === 1 ? 'resposta' : 'respostas'})
-                            </span>
-                          </summary>
-                          <div className="px-3 pb-3 pt-1 space-y-2">
-                            {pergunta.opcoes.map((opcao) => {
-                              const qtd = contagem[opcao] ?? 0
-                              const pct = base ? Math.round((qtd / base) * 100) : 0
-                              return (
-                                <div key={opcao}>
-                                  <div className="flex justify-between gap-3 text-xs mb-1">
-                                    <span>{opcao}</span>
-                                    <span className="text-gray-600">
-                                      {textoColaboradores(qtd)} — <strong>{pct}%</strong>
+                  {/* Respostas da pesquisa: um card por pergunta (só as respostas que apareceram) */}
+                  <div className="pt-4 border-t">
+                    <p className="text-xs font-medium text-gray-600 mb-3">Respostas da pesquisa</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {PERGUNTAS_SAIDA.map((pergunta) => {
+                        const contagem = contagemPorPergunta[pergunta.ordem] ?? {}
+                        const base = totalPorPergunta(pergunta.ordem)
+                        const presentes = pergunta.opcoes.filter((o) => (contagem[o] ?? 0) > 0)
+                        return (
+                          <div key={pergunta.ordem} className="rounded-xl border bg-white shadow-sm p-3">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <p className="text-xs font-semibold text-gray-800 leading-snug" title={pergunta.texto}>
+                                {TITULO_CURTO[pergunta.ordem]}
+                              </p>
+                              <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">
+                                {base} {base === 1 ? 'resposta' : 'respostas'}
+                              </span>
+                            </div>
+                            <div className="flex h-2.5 rounded-full overflow-hidden bg-gray-100 mb-2">
+                              {presentes.map((o) => (
+                                <div
+                                  key={o}
+                                  className={CORES_MOTIVO[o] ?? 'bg-indigo-500'}
+                                  style={{ width: `${(contagem[o] / base) * 100}%` }}
+                                  title={`${o}: ${textoColaboradores(contagem[o])}`}
+                                />
+                              ))}
+                            </div>
+                            <div className="space-y-0.5 text-[11px] text-gray-600">
+                              {presentes.length === 0 ? (
+                                <span className="text-gray-400">sem respostas</span>
+                              ) : (
+                                presentes.map((o) => (
+                                  <div key={o} className="flex items-center justify-between gap-2">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className={`w-2 h-2 rounded-full ${CORES_MOTIVO[o] ?? 'bg-indigo-500'}`} />
+                                      {o}
+                                    </span>
+                                    <span>
+                                      <strong>{contagem[o]}</strong> · {Math.round((contagem[o] / base) * 100)}%
                                     </span>
                                   </div>
-                                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full ${CORES_MOTIVO[opcao] ?? 'bg-indigo-500'}`}
-                                      style={{ width: `${pct}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )
-                            })}
+                                ))
+                              )}
+                            </div>
                           </div>
-                        </details>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
                 </>
-              )}
-
-              {Object.keys(motivosPorFuncao).length > 0 && (
-                <div className="space-y-5 pt-5 border-t">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Motivos de saída por função</p>
-                    <p className="text-[11px] text-gray-400">Baseado na pergunta "O que mais pesou na sua decisão de sair (ou no desligamento)?" da pesquisa de desligamento</p>
-                  </div>
-                  {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
-                    const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
-                    return (
-                      <div key={funcao}>
-                        <p className="text-sm font-medium mb-2">{funcao}</p>
-                        <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
-                          {Object.entries(motivos).map(([motivo, qtd]) => (
-                            <div
-                              key={motivo}
-                              className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
-                              style={{ width: `${(qtd / totalRespostas) * 100}%` }}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                          {Object.entries(motivos).map(([motivo, qtd]) => (
-                            <span key={motivo} className="flex items-center gap-1.5">
-                              <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
-                              {motivo} — <strong>{qtd}</strong> ({Math.round((qtd / totalRespostas) * 100)}%)
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
               )}
             </>
           )}
@@ -439,10 +433,11 @@ function Kpi({ cor, label, valor }: { cor: string; label: string; valor: string 
   )
 }
 
-function MiniKpi({ label, valor }: { label: string; valor: string }) {
+function MiniKpi({ label, valor, icone }: { label: string; valor: string; icone?: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-3 border">
-      <p className="text-lg font-bold text-gray-800">{valor}</p>
+    <div className="bg-white rounded-xl p-3 border shadow-sm">
+      {icone && <p className="text-base mb-1">{icone}</p>}
+      <p className="text-lg font-bold text-gray-800 leading-tight">{valor}</p>
       <p className="text-[11px] text-gray-500 mt-0.5">{label}</p>
     </div>
   )
@@ -459,6 +454,110 @@ function BarraFunil({ label, valor, max, cor }: { label: string; valor: number; 
       <div className="h-5 bg-gray-100 rounded">
         <div className={`h-full rounded ${cor}`} style={{ width: `${largura}%` }} />
       </div>
+    </div>
+  )
+}
+
+// Anel com o percentual de turnover.
+function AnelTurnover({ valor }: { valor: number }) {
+  const raio = 34
+  const circunferencia = 2 * Math.PI * raio
+  const preenchido = (Math.min(Math.max(valor, 0), 100) / 100) * circunferencia
+  return (
+    <div className="relative w-24 h-24 shrink-0 mx-auto sm:mx-0">
+      <svg viewBox="0 0 88 88" className="w-24 h-24 -rotate-90">
+        <circle cx="44" cy="44" r={raio} fill="none" stroke="#e5e7eb" strokeWidth="9" />
+        <circle
+          cx="44"
+          cy="44"
+          r={raio}
+          fill="none"
+          stroke="#6366f1"
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={`${preenchido} ${circunferencia}`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-bold text-gray-800 leading-none">{valor}%</span>
+        <span className="text-[10px] text-gray-500 mt-0.5">turnover</span>
+      </div>
+    </div>
+  )
+}
+
+// Cartão com uma barra empilhada por função e a legenda uma única vez.
+function BarrasPorFuncao({
+  titulo,
+  dados,
+  cores,
+  geral,
+  vazio,
+}: {
+  titulo: string
+  dados: Record<string, Record<string, number>>
+  cores: Record<string, string>
+  geral?: Record<string, number>
+  vazio: string
+}) {
+  const funcoes = Object.entries(dados)
+  const legenda = Array.from(new Set(funcoes.flatMap(([, valores]) => Object.keys(valores))))
+  return (
+    <div className="border rounded-xl p-3">
+      <p className="text-xs font-medium text-gray-600 mb-2">{titulo}</p>
+      {funcoes.length === 0 ? (
+        <p className="text-xs text-gray-400">{vazio}</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-2 text-[11px] text-gray-600">
+            {legenda.map((item) => (
+              <span key={item} className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${cores[item] ?? 'bg-gray-400'}`} />
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="space-y-1.5 max-h-56 overflow-y-auto">
+            {funcoes.length > 1 && geral && <LinhaBarra nome="Geral" valores={geral} cores={cores} destaque />}
+            {funcoes.map(([funcao, valores]) => (
+              <LinhaBarra key={funcao} nome={funcao} valores={valores} cores={cores} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function LinhaBarra({
+  nome,
+  valores,
+  cores,
+  destaque,
+}: {
+  nome: string
+  valores: Record<string, number>
+  cores: Record<string, string>
+  destaque?: boolean
+}) {
+  const total = Object.values(valores).reduce((a, b) => a + b, 0)
+  if (!total) return null
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className={`w-24 shrink-0 truncate ${destaque ? 'font-semibold text-gray-800' : 'text-gray-600'}`} title={nome}>
+        {nome}
+      </span>
+      <div className="flex h-3 flex-1 rounded-full overflow-hidden bg-gray-100">
+        {Object.entries(valores).map(([chave, qtd]) => (
+          <div
+            key={chave}
+            className={cores[chave] ?? 'bg-gray-400'}
+            style={{ width: `${(qtd / total) * 100}%` }}
+            title={`${chave}: ${qtd} (${Math.round((qtd / total) * 100)}%)`}
+          />
+        ))}
+      </div>
+      <span className="w-6 text-right text-gray-500">{total}</span>
     </div>
   )
 }

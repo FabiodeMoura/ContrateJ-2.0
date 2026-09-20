@@ -34,3 +34,17 @@ export const PONTOS_DE_ATENCAO: PontoDeAtencao[] = [
   { ordem: 7, frase: 'a falta de oportunidade de crescimento', negativas: ['Não'] },
   { ordem: 8, frase: 'a comunicação da empresa', negativas: ['Raramente'] },
 ]
+
+// Nome curto de cada pergunta, para o relatório de turnover ficar compacto.
+export const TITULO_CURTO: Record<number, string> = {
+  1: 'Experiência geral',
+  2: 'Recomendaria a empresa',
+  3: 'Relacionamento com o gestor',
+  4: 'Reconhecimento',
+  5: 'Salário e benefícios',
+  6: 'Ambiente com a equipe',
+  7: 'Oportunidade de crescimento',
+  8: 'Comunicação da empresa',
+  9: 'Principal motivo da saída',
+  10: 'Teria continuado na empresa',
+}
