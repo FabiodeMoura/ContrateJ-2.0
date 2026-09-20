@@ -128,7 +128,7 @@ export default async function PlanosPage() {
           <div className="bg-white rounded-2xl border p-6">
             <p className="font-medium text-sm mb-1">Precisa de mais alguns links?</p>
             <p className="text-xs text-gray-500 mb-4">
-              Compre links avulsos por R$ 2,00 cada, sem precisar mudar de plano.
+              Compre links avulsos por R$ 3,00 cada, sem precisar mudar de plano.
             </p>
             <ComprarLinksExtrasButton />
           </div>
