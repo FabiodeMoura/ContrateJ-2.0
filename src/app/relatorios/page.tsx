@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import { PERGUNTAS_SAIDA, PONTOS_DE_ATENCAO } from '@/lib/perguntasSaida'
 
 export default async function RelatoriosPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string }
+  searchParams: { empresa?: string; turnover?: string }
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -70,30 +71,77 @@ export default async function RelatoriosPage({
     return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0
   }
 
-  // Motivos de saída por função (pergunta 9 da entrevista de desligamento:
-  // "O que mais pesou na sua decisão de sair/desligamento?")
+  // ---------- Turnover: filtro próprio (Todas as empresas ou uma empresa) ----------
+  const listaEmpresas = empresas ?? []
+  const turnoverEmpresaId =
+    searchParams.turnover && listaEmpresas.some((e) => e.id === searchParams.turnover)
+      ? searchParams.turnover
+      : 'todas'
+  const empresaIdsTurnover =
+    turnoverEmpresaId === 'todas' ? listaEmpresas.map((e) => e.id) : [turnoverEmpresaId]
+  const nomeEscopoTurnover =
+    turnoverEmpresaId === 'todas'
+      ? 'Todas as empresas'
+      : listaEmpresas.find((e) => e.id === turnoverEmpresaId)?.nome_fantasia ?? ''
+
   const { data: colaboradoresDaEmpresa } = await supabase
     .from('colaboradores')
-    .select('id, funcao, status, tipo_desligamento')
-    .eq('empresa_id', empresaId ?? '00000000-0000-0000-0000-000000000000')
+    .select('id, empresa_id, funcao, status, tipo_desligamento')
+    .in('empresa_id', empresaIdsTurnover.length ? empresaIdsTurnover : ['00000000-0000-0000-0000-000000000000'])
 
   const funcaoPorColaboradorId = Object.fromEntries(
     (colaboradoresDaEmpresa ?? []).map((c) => [c.id, c.funcao ?? 'Sem função'])
   )
   const colaboradorIds = (colaboradoresDaEmpresa ?? []).map((c) => c.id)
 
-  const { data: respostasMotivo } = await supabase
-    .from('respostas_saida')
-    .select('colaborador_id, resposta')
-    .eq('ordem', 9)
-    .in('colaborador_id', colaboradorIds.length ? colaboradorIds : ['00000000-0000-0000-0000-000000000000'])
+  // Todas as respostas da pesquisa de desligamento. Busca em lotes porque o
+  // Supabase devolve no máximo 1000 linhas por consulta.
+  const respostasBrutas: { colaborador_id: string; ordem: number; resposta: string }[] = []
+  for (let i = 0; i < colaboradorIds.length; i += 50) {
+    const { data: lote } = await supabase
+      .from('respostas_saida')
+      .select('colaborador_id, ordem, resposta')
+      .in('colaborador_id', colaboradorIds.slice(i, i + 50))
+    if (lote) respostasBrutas.push(...lote)
+  }
 
-  const motivosPorFuncao: Record<string, Record<string, number>> = {}
-  respostasMotivo?.forEach((r) => {
-    const funcao = funcaoPorColaboradorId[r.colaborador_id] ?? 'Sem função'
-    motivosPorFuncao[funcao] = motivosPorFuncao[funcao] ?? {}
-    motivosPorFuncao[funcao][r.resposta] = (motivosPorFuncao[funcao][r.resposta] ?? 0) + 1
+  // Se alguém respondeu a mesma pergunta duas vezes, vale só a primeira.
+  const respostasUnicas = new Map<string, { colaborador_id: string; ordem: number; resposta: string }>()
+  respostasBrutas.forEach((r) => {
+    const chave = `${r.colaborador_id}|${r.ordem}`
+    if (!respostasUnicas.has(chave)) respostasUnicas.set(chave, r)
   })
+  const respostasSaida = Array.from(respostasUnicas.values())
+  const totalRespondentes = new Set(respostasSaida.map((r) => r.colaborador_id)).size
+
+  // Soma por pergunta e por resposta (ex.: pergunta 6 -> { Ruim: 2, Regular: 1, ... })
+  const contagemPorPergunta: Record<number, Record<string, number>> = {}
+  respostasSaida.forEach((r) => {
+    contagemPorPergunta[r.ordem] = contagemPorPergunta[r.ordem] ?? {}
+    contagemPorPergunta[r.ordem][r.resposta] = (contagemPorPergunta[r.ordem][r.resposta] ?? 0) + 1
+  })
+  const totalPorPergunta = (ordem: number) =>
+    Object.values(contagemPorPergunta[ordem] ?? {}).reduce((a, b) => a + b, 0)
+
+  // "3 colaboradores apontaram o clima da empresa" (pontos críticos, do mais citado ao menos)
+  const pontosApontados = PONTOS_DE_ATENCAO.map((ponto) => {
+    const contagem = contagemPorPergunta[ponto.ordem] ?? {}
+    const quantidade = ponto.negativas.reduce((soma, opcao) => soma + (contagem[opcao] ?? 0), 0)
+    const base = totalPorPergunta(ponto.ordem)
+    return { ...ponto, quantidade, percentual: base ? Math.round((quantidade / base) * 100) : 0 }
+  })
+    .filter((ponto) => ponto.quantidade > 0)
+    .sort((a, b) => b.quantidade - a.quantidade)
+
+  // Motivos de saída por função (pergunta 9: "O que mais pesou na sua decisão de sair?")
+  const motivosPorFuncao: Record<string, Record<string, number>> = {}
+  respostasSaida
+    .filter((r) => r.ordem === 9)
+    .forEach((r) => {
+      const funcao = funcaoPorColaboradorId[r.colaborador_id] ?? 'Sem função'
+      motivosPorFuncao[funcao] = motivosPorFuncao[funcao] ?? {}
+      motivosPorFuncao[funcao][r.resposta] = (motivosPorFuncao[funcao][r.resposta] ?? 0) + 1
+    })
 
   const CORES_MOTIVO: Record<string, string> = {
     'Salário': 'bg-red-500',
@@ -203,91 +251,180 @@ export default async function RelatoriosPage({
           ))}
         </div>
 
-        {/* Turnover: totais, tipo de desligamento e motivos da entrevista de saída */}
-        {totalColaboradores > 0 && (
-          <div className="bg-white rounded-xl border p-4 mt-6">
-            <p className="font-medium text-sm mb-1">Turnover</p>
-            <p className="text-xs text-gray-400 mb-4">Colaboradores efetivados e indicadores da entrevista de desligamento</p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <MiniKpi label="Colaboradores" valor={`${totalColaboradores}`} />
-              <MiniKpi label="Desligados" valor={`${totalDesligados}`} />
-              <MiniKpi label="Turnover" valor={`${turnoverGeral}%`} />
-              <MiniKpi label="Pediu demissão x Foi demitido" valor={`${pedidosDemissao} x ${demissoes}`} />
-            </div>
-
-            {Object.keys(tipoPorFuncao).length > 0 && (
-              <div className="space-y-5 mb-6">
-                <p className="text-xs font-medium text-gray-600">Tipo de desligamento por função</p>
-                {Object.entries(tipoPorFuncao).map(([funcao, tipos]) => {
-                  const totalTipos = Object.values(tipos).reduce((a, b) => a + b, 0)
-                  return (
-                    <div key={funcao}>
-                      <p className="text-sm font-medium mb-2">{funcao}</p>
-                      <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
-                        {Object.entries(tipos).map(([tipo, qtd]) => (
-                          <div
-                            key={tipo}
-                            className={CORES_TIPO[tipo] ?? 'bg-gray-400'}
-                            style={{ width: `${(qtd / totalTipos) * 100}%` }}
-                          />
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                        {Object.entries(tipos).map(([tipo, qtd]) => (
-                          <span key={tipo} className="flex items-center gap-1.5">
-                            <span className={`w-2.5 h-2.5 rounded-full ${CORES_TIPO[tipo] ?? 'bg-gray-400'}`} />
-                            {tipo} — <strong>{qtd}</strong>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {Object.keys(motivosPorFuncao).length > 0 && (
-              <div className="space-y-5 pt-5 border-t">
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Motivos de saída por função</p>
-                  <p className="text-[11px] text-gray-400">Baseado na pergunta "O que mais pesou na sua decisão de sair (ou no desligamento)?" da pesquisa de desligamento</p>
-                </div>
-                {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
-                  const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
-                  return (
-                    <div key={funcao}>
-                      <p className="text-sm font-medium mb-2">{funcao}</p>
-                      <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
-                        {Object.entries(motivos).map(([motivo, qtd]) => (
-                          <div
-                            key={motivo}
-                            className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
-                            style={{ width: `${(qtd / totalRespostas) * 100}%` }}
-                          />
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                        {Object.entries(motivos).map(([motivo, qtd]) => (
-                          <span key={motivo} className="flex items-center gap-1.5">
-                            <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
-                            {motivo} — <strong>{Math.round((qtd / totalRespostas) * 100)}%</strong>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {Object.keys(motivosPorFuncao).length === 0 && (
-              <p className="text-xs text-gray-400 pt-4 border-t">
-                Ainda não há respostas da pesquisa de desligamento para mostrar os motivos de saída.
+        {/* Turnover: totais, tipo de desligamento e respostas da entrevista de saída */}
+        <div id="turnover" className="bg-white rounded-xl border p-4 mt-6 scroll-mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <p className="font-medium text-sm mb-1">Turnover</p>
+              <p className="text-xs text-gray-400">
+                Colaboradores efetivados e entrevista de desligamento — <strong>{nomeEscopoTurnover}</strong>
               </p>
+            </div>
+            {listaEmpresas.length > 1 && (
+              <EmpresaSelector
+                empresas={listaEmpresas}
+                valorAtual={turnoverEmpresaId}
+                incluirTodas
+                parametro="turnover"
+                ancora="turnover"
+              />
             )}
           </div>
-        )}
+
+          {totalColaboradores === 0 ? (
+            <p className="text-xs text-gray-400">Nenhum colaborador cadastrado para {nomeEscopoTurnover}.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                <MiniKpi label="Colaboradores" valor={`${totalColaboradores}`} />
+                <MiniKpi label="Desligados" valor={`${totalDesligados}`} />
+                <MiniKpi label="Turnover" valor={`${turnoverGeral}%`} />
+                <MiniKpi label="Pediu demissão x Foi demitido" valor={`${pedidosDemissao} x ${demissoes}`} />
+              </div>
+
+              {Object.keys(tipoPorFuncao).length > 0 && (
+                <div className="space-y-5 mb-6">
+                  <p className="text-xs font-medium text-gray-600">Tipo de desligamento por função</p>
+                  {Object.entries(tipoPorFuncao).map(([funcao, tipos]) => {
+                    const totalTipos = Object.values(tipos).reduce((a, b) => a + b, 0)
+                    return (
+                      <div key={funcao}>
+                        <p className="text-sm font-medium mb-2">{funcao}</p>
+                        <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
+                          {Object.entries(tipos).map(([tipo, qtd]) => (
+                            <div
+                              key={tipo}
+                              className={CORES_TIPO[tipo] ?? 'bg-gray-400'}
+                              style={{ width: `${(qtd / totalTipos) * 100}%` }}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                          {Object.entries(tipos).map(([tipo, qtd]) => (
+                            <span key={tipo} className="flex items-center gap-1.5">
+                              <span className={`w-2.5 h-2.5 rounded-full ${CORES_TIPO[tipo] ?? 'bg-gray-400'}`} />
+                              {tipo} — <strong>{qtd}</strong>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {totalRespondentes === 0 ? (
+                <p className="text-xs text-gray-400 pt-4 border-t">
+                  Ainda não há respostas da pesquisa de desligamento. Assim que os colaboradores desligados
+                  responderem, os pontos apontados aparecem aqui, somados e em percentual.
+                </p>
+              ) : (
+                <>
+                  {/* Pontos apontados: soma de quem citou cada problema */}
+                  <div className="pt-5 border-t mb-6">
+                    <p className="text-xs font-medium text-gray-600">Pontos apontados pelos colaboradores</p>
+                    <p className="text-[11px] text-gray-400 mb-3">
+                      {textoColaboradores(totalRespondentes)} {totalRespondentes === 1 ? 'respondeu' : 'responderam'} a
+                      pesquisa de desligamento. O percentual considera quem respondeu cada pergunta.
+                    </p>
+                    {pontosApontados.length === 0 ? (
+                      <p className="text-xs text-gray-400">Nenhum ponto negativo apontado até agora.</p>
+                    ) : (
+                      pontosApontados.map((ponto) => (
+                        <div key={ponto.ordem} className="mb-3">
+                          <div className="flex justify-between gap-3 text-sm mb-1">
+                            <span>
+                              <strong>{fraseApontaram(ponto.quantidade)}</strong> {ponto.frase}
+                            </span>
+                            <span className="font-semibold text-gray-700">{ponto.percentual}%</span>
+                          </div>
+                          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${ponto.percentual}%` }} />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Todas as perguntas da pesquisa, com soma e percentual por resposta */}
+                  <div className="pt-5 border-t mb-6">
+                    <p className="text-xs font-medium text-gray-600 mb-3">Todas as respostas da pesquisa de desligamento</p>
+                    {PERGUNTAS_SAIDA.map((pergunta) => {
+                      const contagem = contagemPorPergunta[pergunta.ordem] ?? {}
+                      const base = totalPorPergunta(pergunta.ordem)
+                      return (
+                        <details key={pergunta.ordem} open className="border rounded-lg mb-2">
+                          <summary className="cursor-pointer text-sm font-medium px-3 py-2">
+                            {pergunta.ordem}. {pergunta.texto}{' '}
+                            <span className="text-xs text-gray-400 font-normal">
+                              ({base} {base === 1 ? 'resposta' : 'respostas'})
+                            </span>
+                          </summary>
+                          <div className="px-3 pb-3 pt-1 space-y-2">
+                            {pergunta.opcoes.map((opcao) => {
+                              const qtd = contagem[opcao] ?? 0
+                              const pct = base ? Math.round((qtd / base) * 100) : 0
+                              return (
+                                <div key={opcao}>
+                                  <div className="flex justify-between gap-3 text-xs mb-1">
+                                    <span>{opcao}</span>
+                                    <span className="text-gray-600">
+                                      {textoColaboradores(qtd)} — <strong>{pct}%</strong>
+                                    </span>
+                                  </div>
+                                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${CORES_MOTIVO[opcao] ?? 'bg-indigo-500'}`}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </details>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {Object.keys(motivosPorFuncao).length > 0 && (
+                <div className="space-y-5 pt-5 border-t">
+                  <div>
+                    <p className="text-xs font-medium text-gray-600">Motivos de saída por função</p>
+                    <p className="text-[11px] text-gray-400">Baseado na pergunta "O que mais pesou na sua decisão de sair (ou no desligamento)?" da pesquisa de desligamento</p>
+                  </div>
+                  {Object.entries(motivosPorFuncao).map(([funcao, motivos]) => {
+                    const totalRespostas = Object.values(motivos).reduce((a, b) => a + b, 0)
+                    return (
+                      <div key={funcao}>
+                        <p className="text-sm font-medium mb-2">{funcao}</p>
+                        <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 mb-2">
+                          {Object.entries(motivos).map(([motivo, qtd]) => (
+                            <div
+                              key={motivo}
+                              className={CORES_MOTIVO[motivo] ?? 'bg-gray-400'}
+                              style={{ width: `${(qtd / totalRespostas) * 100}%` }}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                          {Object.entries(motivos).map(([motivo, qtd]) => (
+                            <span key={motivo} className="flex items-center gap-1.5">
+                              <span className={`w-2.5 h-2.5 rounded-full ${CORES_MOTIVO[motivo] ?? 'bg-gray-400'}`} />
+                              {motivo} — <strong>{qtd}</strong> ({Math.round((qtd / totalRespostas) * 100)}%)
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </main>
       <MobileNav />
     </div>
@@ -325,4 +462,12 @@ function BarraFunil({ label, valor, max, cor }: { label: string; valor: number; 
       </div>
     </div>
   )
+}
+
+function textoColaboradores(qtd: number) {
+  return qtd === 1 ? '1 colaborador' : `${qtd} colaboradores`
+}
+
+function fraseApontaram(qtd: number) {
+  return qtd === 1 ? '1 colaborador apontou' : `${qtd} colaboradores apontaram`
 }

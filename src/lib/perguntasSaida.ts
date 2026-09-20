@@ -16,3 +16,21 @@ export const PERGUNTAS_SAIDA: PerguntaSaida[] = [
   { ordem: 9, texto: 'O que mais pesou na sua decisão de sair (ou no desligamento)?', opcoes: ['Salário', 'Ambiente de trabalho', 'Gestão/liderança', 'Oportunidade em outro lugar', 'Outro motivo'] },
   { ordem: 10, texto: 'No geral, você teria continuado na empresa se pudesse?', opcoes: ['Sim, com certeza', 'Talvez', 'Não'] },
 ]
+
+// Pontos que o relatório de turnover resume em frases como
+// "3 colaboradores apontaram o clima da empresa".
+// "negativas" são as respostas que contam como "apontou esse ponto".
+export interface PontoDeAtencao {
+  ordem: number // pergunta da pesquisa que originou o ponto
+  frase: string // completa "N colaboradores apontaram ___"
+  negativas: string[]
+}
+
+export const PONTOS_DE_ATENCAO: PontoDeAtencao[] = [
+  { ordem: 6, frase: 'o clima da empresa (ambiente com a equipe)', negativas: ['Regular', 'Ruim'] },
+  { ordem: 3, frase: 'o relacionamento com o gestor', negativas: ['Regular', 'Ruim'] },
+  { ordem: 4, frase: 'a falta de reconhecimento', negativas: ['Raramente', 'Nunca'] },
+  { ordem: 5, frase: 'o salário e os benefícios', negativas: ['Parcialmente', 'Não'] },
+  { ordem: 7, frase: 'a falta de oportunidade de crescimento', negativas: ['Não'] },
+  { ordem: 8, frase: 'a comunicação da empresa', negativas: ['Raramente'] },
+]

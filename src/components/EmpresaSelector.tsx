@@ -6,10 +6,14 @@ export default function EmpresaSelector({
   empresas,
   valorAtual,
   incluirTodas = false,
+  parametro = 'empresa',
+  ancora,
 }: {
   empresas: { id: string; nome_fantasia: string }[]
   valorAtual: string
   incluirTodas?: boolean
+  parametro?: string
+  ancora?: string
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -17,8 +21,8 @@ export default function EmpresaSelector({
 
   function mudar(novoValor: string) {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('empresa', novoValor)
-    router.push(`${pathname}?${params.toString()}`)
+    params.set(parametro, novoValor)
+    router.push(`${pathname}?${params.toString()}${ancora ? `#${ancora}` : ''}`)
   }
 
   if (empresas.length <= 1 && !incluirTodas) {
