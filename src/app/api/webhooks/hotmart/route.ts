@@ -6,24 +6,43 @@ import { createClient } from '@supabase/supabase-js'
 // 1. No Hotmart, crie 3 produtos (Plano 79, Plano 99, Links avulsos) com
 //    os preços combinados (79,90 / 99,90 / 3,00).
 // 2. Em cada produto, vá em Ferramentas > Webhook e cadastre esta URL:
-//    https://contrateja.onrender.com/api/webhooks/hotmart
+//    https://contrateja.app.br/api/webhooks/hotmart
 // 3. Copie o "Hottok" (token de segurança) que o Hotmart gera e cole na
 //    variável de ambiente HOTMART_HOTTOK no Render.
 // 4. Para o sistema saber qual produto é qual, defina no Render as
 //    variáveis de ambiente com o ID de cada produto no Hotmart:
 //    HOTMART_ID_PLANO_79, HOTMART_ID_PLANO_99, HOTMART_ID_LINKS_AVULSOS
-// 5. Teste usando o botão "Simular" que o Hotmart oferece na tela do
+// 5. HOTMART_SEGREDO_INTERNO (Render): senha entre este site e o banco de dados.
+//    NUNCA escreva esse valor no código nem no GitHub. Se precisar trocar, altere
+//    no Render e na função processar_compra_hotmart do Supabase ao mesmo tempo.
+// 6. Teste usando o botão "Simular" que o Hotmart oferece na tela do
 //    webhook, e me avise se o formato dos dados vier diferente do
 //    esperado aqui — é comum precisar de um ajuste fino depois do
 //    primeiro teste real.
 
-const SEGREDO_INTERNO = '71beb54b0cefa79c30320718ffbd80e1f64bbafb7d8dadf4'
+// Compara textos em tempo constante (evita descobrir a senha pelo tempo de resposta)
+function iguais(a: string, b: string) {
+  const ta = new TextEncoder().encode(a)
+  const tb = new TextEncoder().encode(b)
+  let diferenca = ta.length ^ tb.length
+  for (let i = 0; i < Math.max(ta.length, tb.length); i++) {
+    diferenca |= (ta[i] ?? 0) ^ (tb[i] ?? 0)
+  }
+  return diferenca === 0
+}
 
 export async function POST(request: NextRequest) {
-  const hottokRecebido = request.headers.get('x-hotmart-hottok')
+  const hottokRecebido = request.headers.get('x-hotmart-hottok') ?? ''
   const hottokEsperado = process.env.HOTMART_HOTTOK
+  const segredoInterno = process.env.HOTMART_SEGREDO_INTERNO
 
-  if (hottokEsperado && hottokRecebido !== hottokEsperado) {
+  // Sem essas duas variáveis configuradas o webhook não funciona (recusa tudo)
+  if (!hottokEsperado || !segredoInterno) {
+    console.error('Webhook do Hotmart sem configuração: defina HOTMART_HOTTOK e HOTMART_SEGREDO_INTERNO no Render.')
+    return NextResponse.json({ erro: 'Webhook não configurado' }, { status: 503 })
+  }
+
+  if (!iguais(hottokRecebido, hottokEsperado)) {
     return NextResponse.json({ erro: 'Hottok inválido' }, { status: 401 })
   }
 
@@ -74,7 +93,7 @@ export async function POST(request: NextRequest) {
     p_email: email,
     p_tipo: tipo,
     p_quantidade: quantidade,
-    p_segredo: SEGREDO_INTERNO,
+    p_segredo: segredoInterno,
     p_transacao: transacao,
     p_renovacao: renovacao,
   })

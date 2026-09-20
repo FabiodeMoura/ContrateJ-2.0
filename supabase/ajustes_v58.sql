@@ -1,0 +1,7 @@
+-- Ajustes v58 — JÁ APLICADOS no projeto Supabase "contrateja" (registro).
+-- Segurança do webhook do Hotmart: a senha entre o site e o banco (função processar_compra_hotmart)
+-- estava escrita no código público do GitHub. Ela foi TROCADA por uma nova, guardada só:
+--   1) no Render, na variável de ambiente HOTMART_SEGREDO_INTERNO;
+--   2) dentro da função processar_compra_hotmart, no Supabase.
+-- O valor novo NÃO fica no código nem neste arquivo. Para trocar de novo, altere o valor nos dois lugares
+-- ao mesmo tempo (a função compara o texto recebido em "p_segredo" com o valor guardado nela).
