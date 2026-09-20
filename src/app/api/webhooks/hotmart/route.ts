@@ -9,9 +9,13 @@ import { createClient } from '@supabase/supabase-js'
 //    https://contrateja.app.br/api/webhooks/hotmart
 // 3. Copie o "Hottok" (token de segurança) que o Hotmart gera e cole na
 //    variável de ambiente HOTMART_HOTTOK no Render.
-// 4. Para o sistema saber qual produto é qual, defina no Render as
-//    variáveis de ambiente com o ID de cada produto no Hotmart:
-//    HOTMART_ID_PLANO_79, HOTMART_ID_PLANO_99, HOTMART_ID_LINKS_AVULSOS
+// 4. Para o sistema saber qual plano é qual, defina no Render:
+//    - Se os planos ficarem em produtos separados: o ID de cada produto
+//      (HOTMART_ID_PLANO_79, HOTMART_ID_PLANO_99).
+//    - Se os dois planos ficarem no MESMO produto: o código de cada oferta
+//      (HOTMART_OFERTA_PLANO_79, HOTMART_OFERTA_PLANO_99). O código é o trecho
+//      depois de "off=" no link de pagamento da oferta.
+//    - Links avulsos (produto de pagamento único): HOTMART_ID_LINKS_AVULSOS
 // 5. HOTMART_SEGREDO_INTERNO (Render): senha entre este site e o banco de dados.
 //    NUNCA escreva esse valor no código nem no GitHub. Se precisar trocar, altere
 //    no Render e na função processar_compra_hotmart do Supabase ao mesmo tempo.
@@ -55,6 +59,8 @@ export async function POST(request: NextRequest) {
   // Identifica a transação (para não contar duas vezes o mesmo aviso) e se é
   // renovação mensal (recurrence_number > 1), que não libera empresa nova.
   const transacao = corpo?.data?.purchase?.transaction ? String(corpo.data.purchase.transaction) : null
+  const codigoOferta = corpo?.data?.purchase?.offer?.code ? String(corpo.data.purchase.offer.code) : ''
+  const nomePlano = corpo?.data?.subscription?.plan?.name ? String(corpo.data.subscription.plan.name) : ''
   const renovacao = Number(corpo?.data?.purchase?.recurrence_number ?? 1) > 1
 
   if (evento !== 'PURCHASE_APPROVED' && evento !== 'PURCHASE_COMPLETE') {
@@ -69,11 +75,15 @@ export async function POST(request: NextRequest) {
   let tipo: 'plano_79' | 'plano_99' | 'links_avulsos' | null = null
   let quantidade = 0
 
-  if (produtoId === process.env.HOTMART_ID_PLANO_79) {
+  if (codigoOferta && codigoOferta === process.env.HOTMART_OFERTA_PLANO_79) {
     tipo = 'plano_79'
-  } else if (produtoId === process.env.HOTMART_ID_PLANO_99) {
+  } else if (codigoOferta && codigoOferta === process.env.HOTMART_OFERTA_PLANO_99) {
     tipo = 'plano_99'
-  } else if (produtoId === process.env.HOTMART_ID_LINKS_AVULSOS) {
+  } else if (produtoId && produtoId === process.env.HOTMART_ID_PLANO_79) {
+    tipo = 'plano_79'
+  } else if (produtoId && produtoId === process.env.HOTMART_ID_PLANO_99) {
+    tipo = 'plano_99'
+  } else if (produtoId && produtoId === process.env.HOTMART_ID_LINKS_AVULSOS) {
     tipo = 'links_avulsos'
     // Cada link avulso custa R$ 3,00 — estima a quantidade pelo valor pago.
     // Ajuste aqui se o Hotmart mandar a quantidade em outro campo.
@@ -83,8 +93,12 @@ export async function POST(request: NextRequest) {
   if (!tipo) {
     // Responde 2xx de propósito: se o Hotmart receber erro, ele desativa sozinho a configuração do
     // webhook. O aviso fica registrado no log do Render.
-    console.error(`Webhook do Hotmart: produto ${produtoId} não reconhecido (confira HOTMART_ID_* no Render).`)
-    return NextResponse.json({ ok: true, ignorado: `produto ${produtoId} não reconhecido` })
+    console.error('Webhook do Hotmart: compra não reconhecida (confira HOTMART_ID_* e HOTMART_OFERTA_* no Render).', {
+      produtoId,
+      codigoOferta,
+      nomePlano,
+    })
+    return NextResponse.json({ ok: true, ignorado: 'produto ou oferta não reconhecidos' })
   }
 
   const supabase = createClient(
