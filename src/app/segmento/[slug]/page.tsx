@@ -111,7 +111,9 @@ export default async function SegmentoPage({
     .select('id, funcao')
     .in('funcao', segmento.funcoes)
 
-  const empresaSelecionada = searchParams.empresa ?? empresas?.[0]?.id ?? ''
+  // Só vale uma empresa da própria conta; senão usa a primeira
+  const empresaSelecionada =
+    empresas?.find((e) => e.id === searchParams.empresa)?.id ?? empresas?.[0]?.id ?? ''
 
   // mantém a ordem definida acima (não a ordem alfabética que vem do banco)
   const perfisOrdenados = segmento.funcoes
@@ -159,7 +161,7 @@ export default async function SegmentoPage({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {perfisOrdenados.map((perfil) => (
             <GerarLinkCard
-              key={perfil.id}
+              key={`${perfil.id}-${empresaSelecionada}`}
               perfilId={perfil.id}
               funcao={perfil.funcao}
               icone={ICONES_FUNCAO[perfil.funcao] ?? '💼'}

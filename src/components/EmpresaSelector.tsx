@@ -2,6 +2,9 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
+// Filtro de empresa usado nas telas do painel.
+// - Com 2 ou mais empresas: lista para escolher (e "Todas as empresas", quando permitido).
+// - Com 1 empresa: só mostra o nome dela.
 export default function EmpresaSelector({
   empresas,
   valorAtual,
@@ -25,20 +28,32 @@ export default function EmpresaSelector({
     router.push(`${pathname}?${params.toString()}${ancora ? `#${ancora}` : ''}`)
   }
 
-  if (empresas.length <= 1 && !incluirTodas) {
+  if (empresas.length === 0) {
     return null
   }
 
+  if (empresas.length === 1 && !incluirTodas) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm bg-white border rounded-lg px-3 py-2 text-gray-700">
+        <span aria-hidden>🏢</span>
+        {empresas[0].nome_fantasia}
+      </span>
+    )
+  }
+
   return (
-    <select
-      value={valorAtual}
-      onChange={(e) => mudar(e.target.value)}
-      className="border rounded-lg px-3 py-2 text-sm bg-white"
-    >
-      {incluirTodas && <option value="todas">Todas as empresas</option>}
-      {empresas.map((e) => (
-        <option key={e.id} value={e.id}>{e.nome_fantasia}</option>
-      ))}
-    </select>
+    <label className="inline-flex items-center gap-2">
+      <span className="text-xs text-gray-500 hidden sm:inline">🏢 Empresa</span>
+      <select
+        value={valorAtual}
+        onChange={(e) => mudar(e.target.value)}
+        className="border rounded-lg px-3 py-2 text-sm bg-white max-w-[16rem]"
+      >
+        {incluirTodas && <option value="todas">Todas as empresas</option>}
+        {empresas.map((e) => (
+          <option key={e.id} value={e.id}>{e.nome_fantasia}</option>
+        ))}
+      </select>
+    </label>
   )
 }

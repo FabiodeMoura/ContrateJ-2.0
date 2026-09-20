@@ -18,21 +18,38 @@ export default async function RelatoriosPage({
     .from('minhas_empresas')
     .select('id, nome_fantasia')
 
-  const empresaId = searchParams.empresa ?? empresas?.[0]?.id
-  const empresaAtual = empresas?.find((e) => e.id === empresaId)
+  const empresasDaConta = empresas ?? []
+  const variasEmpresas = empresasDaConta.length > 1
+  // Com mais de uma empresa, os números mostram todas por padrão; o filtro escolhe uma só.
+  const filtroFunil =
+    searchParams.empresa && empresasDaConta.some((e) => e.id === searchParams.empresa)
+      ? searchParams.empresa
+      : variasEmpresas
+      ? 'todas'
+      : empresasDaConta[0]?.id ?? ''
+  const nomeEscopoFunil =
+    filtroFunil === 'todas'
+      ? `Todas as empresas (${empresasDaConta.length})`
+      : empresasDaConta.find((e) => e.id === filtroFunil)?.nome_fantasia ?? ''
+  const idsFunil = filtroFunil === 'todas' ? empresasDaConta.map((e) => e.id) : [filtroFunil]
 
   const { data: vagasDaEmpresa } = await supabase
     .from('vagas')
     .select('id, funcao')
-    .eq('empresa_id', empresaId)
+    .in('empresa_id', idsFunil.length ? idsFunil : ['00000000-0000-0000-0000-000000000000'])
 
   const vagaIds = vagasDaEmpresa?.map((v) => v.id) ?? []
   const funcaoPorVagaId = Object.fromEntries((vagasDaEmpresa ?? []).map((v) => [v.id, v.funcao]))
 
-  const { data: candidatos } = await supabase
-    .from('candidatos')
-    .select('vaga_id, status, percentual_aderencia')
-    .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
+  // Busca em lotes: com várias empresas a lista de vagas pode ficar grande demais para uma consulta só.
+  const candidatos: { vaga_id: string; status: string; percentual_aderencia: number | null }[] = []
+  for (let i = 0; i < vagaIds.length; i += 100) {
+    const { data: lote } = await supabase
+      .from('candidatos')
+      .select('vaga_id, status, percentual_aderencia')
+      .in('vaga_id', vagaIds.slice(i, i + 100))
+    if (lote) candidatos.push(...lote)
+  }
 
   const total = candidatos?.length ?? 0
   const entrevistados = candidatos?.filter((c) => c.status !== 'Em análise').length ?? 0
@@ -199,11 +216,9 @@ export default async function RelatoriosPage({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h1 className="text-lg font-semibold">Relatórios</h1>
-            <p className="text-xs text-gray-500">{empresaAtual?.nome_fantasia}</p>
+            <p className="text-xs text-gray-500">{nomeEscopoFunil}</p>
           </div>
-          {empresas && empresas.length > 1 && (
-            <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
-          )}
+          <EmpresaSelector empresas={empresasDaConta} valorAtual={filtroFunil} incluirTodas={variasEmpresas} />
         </div>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

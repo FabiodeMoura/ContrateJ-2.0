@@ -21,13 +21,25 @@ export default async function VagasPage({
     .from('minhas_empresas')
     .select('id, nome_fantasia, segmento_principal')
 
-  const empresaId = searchParams.empresa ?? empresas?.[0]?.id
-  const empresaAtual = empresas?.find((e) => e.id === empresaId)
+  const listaEmpresas = empresas ?? []
+  const varias = listaEmpresas.length > 1
+  // Com mais de uma empresa a lista mostra todas por padrão; o filtro escolhe uma só.
+  const filtro =
+    searchParams.empresa && listaEmpresas.some((e) => e.id === searchParams.empresa)
+      ? searchParams.empresa
+      : varias
+      ? 'todas'
+      : listaEmpresas[0]?.id ?? ''
+  const empresaId = filtro !== 'todas' ? filtro : listaEmpresas[0]?.id // empresa padrão do "+ Nova vaga"
+  const idsVisiveis = filtro === 'todas' ? listaEmpresas.map((e) => e.id) : [filtro]
+  const nomePorEmpresaId: Record<string, string> = Object.fromEntries(
+    listaEmpresas.map((e) => [e.id, e.nome_fantasia])
+  )
 
   const { data: vagas } = await supabase
     .from('vagas')
-    .select('id, funcao, status, token_link, candidatos ( id, percentual_aderencia )')
-    .eq('empresa_id', empresaId)
+    .select('id, funcao, status, token_link, empresa_id, candidatos ( id, percentual_aderencia )')
+    .in('empresa_id', idsVisiveis.length ? idsVisiveis : ['00000000-0000-0000-0000-000000000000'])
     .order('criado_em', { ascending: false })
 
   const { data: perfis } = await supabase.from('perfis_disc').select('id, funcao').order('funcao')
@@ -40,14 +52,14 @@ export default async function VagasPage({
           <div>
             <h1 className="text-lg font-semibold">Vagas</h1>
             <p className="text-xs text-gray-500">
-              {empresaAtual?.nome_fantasia ?? 'Selecione uma empresa'}
+              {filtro === 'todas'
+                ? `Todas as empresas (${listaEmpresas.length})`
+                : nomePorEmpresaId[filtro] ?? 'Selecione uma empresa'}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
-            {empresas && empresas.length > 1 && (
-              <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
-            )}
+            <EmpresaSelector empresas={listaEmpresas} valorAtual={filtro} incluirTodas={varias} />
             {empresaId && perfis && (
               <NovaVagaButton empresas={empresas ?? []} empresaIdPadrao={empresaId} perfis={perfis} />
             )}
@@ -59,7 +71,7 @@ export default async function VagasPage({
           {Object.entries(SEGMENTOS_INFO).map(([nome, info]) => (
             <Link
               key={nome}
-              href={`/segmento/${nome.toLowerCase()}`}
+              href={`/segmento/${nome.toLowerCase()}${varias && filtro !== 'todas' ? `?empresa=${filtro}` : ''}`}
               className={`bg-gradient-to-br ${info.cor} text-white rounded-xl p-4 text-center hover:opacity-90 hover:scale-[1.03] transition shadow-sm`}
             >
               <div className="text-2xl mb-1">{info.emoji}</div>
@@ -74,6 +86,7 @@ export default async function VagasPage({
             <thead>
               <tr className="text-gray-500 border-b text-left">
                 <th className="p-3 font-medium">Função</th>
+                {varias && <th className="p-3 font-medium">Empresa</th>}
                 <th className="p-3 font-medium">Candidatos</th>
                 <th className="p-3 font-medium">Aderência média</th>
                 <th className="p-3 font-medium">Status</th>
@@ -93,6 +106,7 @@ export default async function VagasPage({
                 return (
                   <tr key={vaga.id} className="border-b last:border-0">
                     <td className="p-3 font-medium">{vaga.funcao}</td>
+                    {varias && <td className="p-3 text-gray-600">{nomePorEmpresaId[vaga.empresa_id] ?? ''}</td>}
                     <td className="p-3">{candidatosVaga.length}</td>
                     <td className="p-3">{media != null ? `${media}%` : '—'}</td>
                     <td className="p-3">
@@ -107,14 +121,14 @@ export default async function VagasPage({
                       </span>
                     </td>
                     <td className="p-3">
-                      <AcoesVaga vagaId={vaga.id} token={vaga.token_link} funcao={vaga.funcao} nomeEmpresa={empresaAtual?.nome_fantasia ?? ''} />
+                      <AcoesVaga vagaId={vaga.id} token={vaga.token_link} funcao={vaga.funcao} nomeEmpresa={nomePorEmpresaId[vaga.empresa_id] ?? ''} />
                     </td>
                   </tr>
                 )
               })}
               {(!vagas || vagas.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="p-6 text-center text-gray-400 text-sm">
+                  <td colSpan={varias ? 6 : 5} className="p-6 text-center text-gray-400 text-sm">
                     Nenhuma vaga gerada ainda. Clique em &quot;Nova vaga&quot; pra começar.
                   </td>
                 </tr>
