@@ -64,10 +64,26 @@ export async function POST(request: NextRequest) {
   }
 
   if (!iguais(hottokRecebido, hottokEsperado)) {
+    console.error('Webhook do Hotmart recusado: Hottok inválido (confira HOTMART_HOTTOK no Render).')
     return NextResponse.json({ erro: 'Hottok inválido' }, { status: 401 })
   }
 
-  const corpo = await request.json()
+  let corpo: any
+  try {
+    corpo = await request.json()
+  } catch {
+    // Responde 2xx para o Hotmart não desativar o webhook por causa de um aviso mal formado
+    console.error('Webhook do Hotmart: o aviso não veio em formato JSON.')
+    return NextResponse.json({ ok: false, erro: 'corpo inválido' })
+  }
+
+  // Deixa no log todo aviso recebido (sem dados pessoais), para dar para acompanhar pelo Render
+  console.log('Webhook do Hotmart recebido:', {
+    evento: corpo?.event,
+    produto: corpo?.data?.product?.id,
+    oferta: corpo?.data?.purchase?.offer?.code,
+    plano: corpo?.data?.subscription?.plan?.name,
+  })
 
   const evento: string = corpo?.event ?? ''
   const dados = corpo?.data ?? {}
