@@ -17,7 +17,8 @@ import { createClient } from '@supabase/supabase-js'
 //      o nome precisa conter "79,90" (Plano 79) ou "99,90" (Plano 99).
 //      Alternativa: o código de cada oferta (HOTMART_OFERTA_PLANO_79 / _99), que é o
 //      trecho depois de "off=" no link de pagamento.
-//    - Links avulsos (produto de pagamento único): HOTMART_ID_LINKS_AVULSOS
+//    - Links avulsos (produto de pagamento único): HOTMART_OFERTAS_AVULSOS, no formato
+//      "codigo:5,codigo:10,codigo:20" (código da oferta : quantidade de links) — ou HOTMART_ID_LINKS_AVULSOS
 //    Eventos tratados: compra aprovada/completa (libera), cancelamento de assinatura (mantém o
 //    acesso até o fim do período pago) e reembolso/chargeback (encerra na hora).
 // 5. HOTMART_SEGREDO_INTERNO (Render): senha entre este site e o banco de dados.
@@ -37,6 +38,17 @@ function iguais(a: string, b: string) {
     diferenca |= (ta[i] ?? 0) ^ (tb[i] ?? 0)
   }
   return diferenca === 0
+}
+
+// Ofertas de links avulsos, no formato "codigo:quantidade,codigo:quantidade" (variável HOTMART_OFERTAS_AVULSOS).
+function ofertasAvulsas(): Record<string, number> {
+  const resultado: Record<string, number> = {}
+  for (const par of (process.env.HOTMART_OFERTAS_AVULSOS ?? '').split(',')) {
+    const [codigo, qtd] = par.split(':').map((x) => x.trim())
+    const n = Number(qtd)
+    if (codigo && Number.isFinite(n) && n > 0) resultado[codigo] = n
+  }
+  return resultado
 }
 
 // Converte a data que o Hotmart manda (milissegundos ou segundos) para texto ISO
@@ -135,6 +147,9 @@ export async function POST(request: NextRequest) {
     tipo = 'plano_79'
   } else if (produtoId && produtoId === process.env.HOTMART_ID_PLANO_99) {
     tipo = 'plano_99'
+  } else if (codigoOferta && ofertasAvulsas()[codigoOferta]) {
+    tipo = 'links_avulsos'
+    quantidade = ofertasAvulsas()[codigoOferta]
   } else if (produtoId && produtoId === process.env.HOTMART_ID_LINKS_AVULSOS) {
     tipo = 'links_avulsos'
     // Cada link avulso custa R$ 3,00 — estima a quantidade pelo valor pago.
