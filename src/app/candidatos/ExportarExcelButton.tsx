@@ -6,6 +6,9 @@ interface CandidatoExport {
   nome_completo: string
   email: string
   whatsapp: string
+  cidade?: string | null
+  formacao?: string | null
+  experiencia_resumo?: string | null
   percentual_aderencia: number | null
   recomendacao: string | null
   status: string
@@ -20,6 +23,9 @@ export default function ExportarExcelButton({ candidatos }: { candidatos: Candid
         'Nome completo': c.nome_completo,
         'E-mail': c.email,
         'WhatsApp': c.whatsapp,
+        'Cidade': c.cidade ?? '',
+        'Formação': c.formacao ?? '',
+        'Experiência': c.experiencia_resumo ?? '',
         'Vaga': vaga?.funcao ?? '',
         'Aderência (%)': c.percentual_aderencia ?? '',
         'Recomendação': c.recomendacao ?? '',

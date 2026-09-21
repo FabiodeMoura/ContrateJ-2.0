@@ -3,16 +3,21 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import FiltroPeriodo from '@/components/FiltroPeriodo'
+import { ParametrosPeriodo, resolverPeriodo, aplicarPeriodo, estaNoPeriodo } from '@/lib/periodo'
 import { PERGUNTAS_SAIDA, PONTOS_DE_ATENCAO, TITULO_CURTO } from '@/lib/perguntasSaida'
 
 export default async function RelatoriosPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string; turnover?: string }
+  searchParams: { empresa?: string; turnover?: string } & ParametrosPeriodo
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // Calendário: vale para o funil de contratação e para o turnover
+  const periodo = resolverPeriodo(searchParams)
 
   const { data: empresas } = await supabase
     .from('minhas_empresas')
@@ -44,10 +49,14 @@ export default async function RelatoriosPage({
   // Busca em lotes: com várias empresas a lista de vagas pode ficar grande demais para uma consulta só.
   const candidatos: { vaga_id: string; status: string; percentual_aderencia: number | null }[] = []
   for (let i = 0; i < vagaIds.length; i += 100) {
-    const { data: lote } = await supabase
-      .from('candidatos')
-      .select('vaga_id, status, percentual_aderencia')
-      .in('vaga_id', vagaIds.slice(i, i + 100))
+    const { data: lote } = await aplicarPeriodo(
+      supabase
+        .from('candidatos')
+        .select('vaga_id, status, percentual_aderencia')
+        .in('vaga_id', vagaIds.slice(i, i + 100)),
+      'criado_em',
+      periodo
+    )
     if (lote) candidatos.push(...lote)
   }
 
@@ -102,7 +111,7 @@ export default async function RelatoriosPage({
 
   const { data: colaboradoresDaEmpresa } = await supabase
     .from('colaboradores')
-    .select('id, empresa_id, funcao, status, tipo_desligamento')
+    .select('id, empresa_id, funcao, status, tipo_desligamento, criado_em, desligado_em')
     .in('empresa_id', empresaIdsTurnover.length ? empresaIdsTurnover : ['00000000-0000-0000-0000-000000000000'])
 
   const funcaoPorColaboradorId = Object.fromEntries(
@@ -114,10 +123,14 @@ export default async function RelatoriosPage({
   // Supabase devolve no máximo 1000 linhas por consulta.
   const respostasBrutas: { colaborador_id: string; ordem: number; resposta: string }[] = []
   for (let i = 0; i < colaboradorIds.length; i += 50) {
-    const { data: lote } = await supabase
-      .from('respostas_saida')
-      .select('colaborador_id, ordem, resposta')
-      .in('colaborador_id', colaboradorIds.slice(i, i + 50))
+    const { data: lote } = await aplicarPeriodo(
+      supabase
+        .from('respostas_saida')
+        .select('colaborador_id, ordem, resposta')
+        .in('colaborador_id', colaboradorIds.slice(i, i + 50)),
+      'criado_em',
+      periodo
+    )
     if (lote) respostasBrutas.push(...lote)
   }
 
@@ -187,8 +200,16 @@ export default async function RelatoriosPage({
   }
 
   // Turnover geral e quebra por tipo de desligamento (Pediu demissão x Foi demitido)
-  const totalColaboradores = colaboradoresDaEmpresa?.length ?? 0
-  const desligadosLista = colaboradoresDaEmpresa?.filter((c) => c.status === 'Desligado') ?? []
+  // Com um período escolhido: base = colaboradores cadastrados até o fim do período;
+  // desligados = quem saiu dentro do período (pela data de desligamento).
+  const todosColaboradores = colaboradoresDaEmpresa ?? []
+  const baseColaboradores = periodo.fim
+    ? todosColaboradores.filter((c) => new Date(c.criado_em).getTime() < new Date(periodo.fim as string).getTime())
+    : todosColaboradores
+  const totalColaboradores = baseColaboradores.length
+  const desligadosLista = todosColaboradores.filter(
+    (c) => c.status === 'Desligado' && estaNoPeriodo(c.desligado_em, periodo)
+  )
   const totalDesligados = desligadosLista.length
   const turnoverGeral = totalColaboradores > 0
     ? Math.round((totalDesligados / totalColaboradores) * 1000) / 10
@@ -216,9 +237,15 @@ export default async function RelatoriosPage({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h1 className="text-lg font-semibold">Relatórios</h1>
-            <p className="text-xs text-gray-500">{nomeEscopoFunil}</p>
+            <p className="text-xs text-gray-500">
+              {nomeEscopoFunil}
+              {periodo.tipo !== 'todos' && <span> · 📅 {periodo.rotulo}</span>}
+            </p>
           </div>
-          <EmpresaSelector empresas={empresasDaConta} valorAtual={filtroFunil} incluirTodas={variasEmpresas} />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <EmpresaSelector empresas={empresasDaConta} valorAtual={filtroFunil} incluirTodas={variasEmpresas} />
+            <FiltroPeriodo />
+          </div>
         </div>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

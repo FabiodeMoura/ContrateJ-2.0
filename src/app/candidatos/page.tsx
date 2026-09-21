@@ -32,9 +32,16 @@ export default async function CandidatosPage({
 
   const vagaIds = vagasDaEmpresa?.map((v) => v.id) ?? []
 
+  // Para o "Cadastrar candidato": vagas de todas as empresas, o gestor escolhe a empresa no cadastro
+  const idsEmpresas = (empresas ?? []).map((e) => e.id)
+  const { data: todasAsVagas } = await supabase
+    .from('vagas')
+    .select('id, funcao, empresa_id')
+    .in('empresa_id', idsEmpresas.length ? idsEmpresas : ['00000000-0000-0000-0000-000000000000'])
+
   const { data: candidatos } = await supabase
     .from('candidatos')
-    .select('id, nome_completo, email, whatsapp, percentual_aderencia, recomendacao, status, link_entrevista, vagas ( funcao )')
+    .select('id, nome_completo, email, whatsapp, cidade, formacao, experiencia_resumo, percentual_aderencia, recomendacao, status, link_entrevista, vagas ( funcao )')
     .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
     .order('percentual_aderencia', { ascending: false })
 
@@ -54,8 +61,12 @@ export default async function CandidatosPage({
               <EmpresaSelector empresas={empresas} valorAtual={empresaId ?? ''} />
             )}
             <div className="flex flex-col items-end gap-1">
-              <AdicionarCandidatoButton vagas={vagasDaEmpresa ?? []} />
-              {(!vagasDaEmpresa || vagasDaEmpresa.length === 0) && (
+              <AdicionarCandidatoButton
+                vagas={todasAsVagas ?? []}
+                empresas={empresas ?? []}
+                empresaIdPadrao={empresaId ?? ''}
+              />
+              {(!todasAsVagas || todasAsVagas.length === 0) && (
                 <p className="text-[11px] text-amber-600">Crie uma vaga antes (aba "Vagas") pra poder cadastrar candidatos</p>
               )}
             </div>
@@ -72,6 +83,9 @@ export default async function CandidatosPage({
                   <p className="font-medium text-sm">{c.nome_completo}</p>
                   {/* @ts-expect-error - relação aninhada */}
                   <p className="text-xs text-gray-400">{c.vagas?.funcao}</p>
+                  {(c.cidade || c.formacao) && (
+                    <p className="text-[11px] text-gray-400">{[c.cidade, c.formacao].filter(Boolean).join(' · ')}</p>
+                  )}
                 </div>
                 <p className="font-semibold text-sm shrink-0">
                   {c.percentual_aderencia != null ? `${c.percentual_aderencia}%` : '—'}
@@ -114,7 +128,14 @@ export default async function CandidatosPage({
             <tbody>
               {candidatos?.map((c) => (
                 <tr key={c.id} className="border-b last:border-0">
-                  <td className="p-3 font-medium">{c.nome_completo}</td>
+                  <td className="p-3 font-medium" title={c.experiencia_resumo ?? ''}>
+                    {c.nome_completo}
+                    {(c.cidade || c.formacao) && (
+                      <span className="block text-[11px] font-normal text-gray-400">
+                        {[c.cidade, c.formacao].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </td>
                   <td className="p-3 text-gray-500">{c.email}</td>
                   <td className="p-3 text-gray-500">{c.whatsapp}</td>
                   {/* @ts-expect-error - relação aninhada */}

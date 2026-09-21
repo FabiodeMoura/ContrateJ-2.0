@@ -108,7 +108,7 @@ export default async function PlanosPage() {
                   Mais popular
                 </span>
               )}
-              <p className="text-lg font-semibold mb-1">{plano.nome === 'Gratuito' ? 'Gratuito' : plano.nome.replace('Plano ', 'Plano R$ ')}</p>
+              <p className="text-lg font-semibold mb-1">{plano.nome === 'Gratuito' ? 'Gratuito' : 'Plano mensal'}</p>
               <p className="text-3xl font-bold mb-1">
                 {plano.preco}<span className="text-sm font-normal text-gray-400">{plano.periodo}</span>
               </p>

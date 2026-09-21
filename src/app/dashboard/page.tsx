@@ -7,6 +7,8 @@ import StatusBadge from '@/components/StatusBadge'
 import AvatarIniciais from '@/components/AvatarIniciais'
 import LogoutButton from './LogoutButton'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import FiltroPeriodo from '@/components/FiltroPeriodo'
+import { ParametrosPeriodo, resolverPeriodo, aplicarPeriodo, estaNoPeriodo } from '@/lib/periodo'
 import LogoMarca from '@/components/LogoMarca'
 import { SEGMENTOS_INFO } from '@/lib/segmentos'
 
@@ -24,7 +26,7 @@ function tempoRelativo(data: string) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string }
+  searchParams: { empresa?: string } & ParametrosPeriodo
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -43,26 +45,51 @@ export default async function DashboardPage({
     : [filtroEmpresa]
   const empresaAtual = filtroEmpresa === 'todas' ? undefined : empresas?.find((e) => e.id === filtroEmpresa)
 
-  const { data: vagasComCandidatos } = await supabase
-    .from('vagas')
-    .select('id, funcao, status, criado_em, candidatos ( id, status, percentual_aderencia )')
-    .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
-    .order('criado_em', { ascending: false })
+  // Calendário: vagas e candidatos do dia, mês, ano ou intervalo escolhido
+  const periodo = resolverPeriodo(searchParams)
+  const idsConsulta = empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000']
+
+  const { data: vagasComCandidatos } = await aplicarPeriodo(
+    supabase
+      .from('vagas')
+      .select('id, funcao, status, criado_em, candidatos ( id )')
+      .in('empresa_id', idsConsulta),
+    'criado_em',
+    periodo
+  ).order('criado_em', { ascending: false })
 
   const vagasAtivas = vagasComCandidatos?.filter((v) => v.status === 'Ativa').length ?? 0
-  const todosCandidatos = vagasComCandidatos?.flatMap((v) => v.candidatos ?? []) ?? []
-  const totalCandidatos = todosCandidatos.length
-  const aprovados = todosCandidatos.filter((c) => c.status === 'Aprovado').length
+
+  // Contagens direto no banco (sem o limite de 1000 linhas por consulta)
+  const contarCandidatos = async (status?: string) => {
+    let consulta = aplicarPeriodo(
+      supabase
+        .from('candidatos')
+        .select('id, vagas!inner ( empresa_id )', { count: 'exact', head: true })
+        .in('vagas.empresa_id', idsConsulta),
+      'criado_em',
+      periodo
+    )
+    if (status) consulta = consulta.eq('status', status)
+    const { count } = await consulta
+    return count ?? 0
+  }
+  const totalCandidatos = await contarCandidatos()
+  const aprovados = await contarCandidatos('Aprovado')
   const taxaAdmissao = totalCandidatos ? Math.round((aprovados / totalCandidatos) * 100) : 0
 
   const vagasDestaque = [...(vagasComCandidatos ?? [])]
     .sort((a, b) => (b.candidatos?.length ?? 0) - (a.candidatos?.length ?? 0))
     .slice(0, 5)
 
-  const { data: candidatosRecentes } = await supabase
-    .from('candidatos')
-    .select('id, nome_completo, email, status, criado_em, vagas!inner ( funcao, empresa_id )')
-    .in('vagas.empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
+  const { data: candidatosRecentes } = await aplicarPeriodo(
+    supabase
+      .from('candidatos')
+      .select('id, nome_completo, email, status, criado_em, vagas!inner ( funcao, empresa_id )')
+      .in('vagas.empresa_id', idsConsulta),
+    'criado_em',
+    periodo
+  )
     .order('criado_em', { ascending: false })
     .limit(5)
 
@@ -79,14 +106,23 @@ export default async function DashboardPage({
 
   const { data: colaboradores } = await supabase
     .from('colaboradores')
-    .select('status, tipo_desligamento')
-    .in('empresa_id', empresaIds.length ? empresaIds : ['00000000-0000-0000-0000-000000000000'])
+    .select('status, tipo_desligamento, criado_em, desligado_em')
+    .in('empresa_id', idsConsulta)
 
-  const totalColaboradores = colaboradores?.length ?? 0
-  const colaboradoresAtivos = colaboradores?.filter((c) => c.status === 'Ativo').length ?? 0
-  const colaboradoresDesligados = colaboradores?.filter((c) => c.status === 'Desligado').length ?? 0
-  const pediuDemissao = colaboradores?.filter((c) => c.tipo_desligamento === 'Pediu demissão').length ?? 0
-  const foiDemitido = colaboradores?.filter((c) => c.tipo_desligamento === 'Foi demitido').length ?? 0
+  // Com um período escolhido: base = colaboradores cadastrados até o fim do período;
+  // desligamentos = quem saiu dentro do período (pela data de desligamento).
+  const todosColaboradores = colaboradores ?? []
+  const baseColaboradores = periodo.fim
+    ? todosColaboradores.filter((c) => new Date(c.criado_em).getTime() < new Date(periodo.fim as string).getTime())
+    : todosColaboradores
+  const desligadosNoPeriodo = todosColaboradores.filter(
+    (c) => c.status === 'Desligado' && estaNoPeriodo(c.desligado_em, periodo)
+  )
+  const totalColaboradores = baseColaboradores.length
+  const colaboradoresAtivos = todosColaboradores.filter((c) => c.status === 'Ativo').length
+  const colaboradoresDesligados = desligadosNoPeriodo.length
+  const pediuDemissao = desligadosNoPeriodo.filter((c) => c.tipo_desligamento === 'Pediu demissão').length
+  const foiDemitido = desligadosNoPeriodo.filter((c) => c.tipo_desligamento === 'Foi demitido').length
   const turnover = totalColaboradores > 0
     ? Math.round((colaboradoresDesligados / totalColaboradores) * 1000) / 10
     : 0
@@ -198,12 +234,18 @@ export default async function DashboardPage({
         </section>
 
         {/* Cards */}
-        {empresas && empresas.length > 1 && (
-          <div className="flex items-center justify-between mb-3 mt-8">
-            <p className="text-sm font-medium">Indicadores</p>
-            <EmpresaSelector empresas={empresas} valorAtual={filtroEmpresa} incluirTodas />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 mt-8">
+          <p className="text-sm font-medium">
+            Indicadores
+            {periodo.tipo !== 'todos' && <span className="text-gray-400 font-normal"> · 📅 {periodo.rotulo}</span>}
+          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {empresas && empresas.length > 1 && (
+              <EmpresaSelector empresas={empresas} valorAtual={filtroEmpresa} incluirTodas />
+            )}
+            <FiltroPeriodo />
           </div>
-        )}
+        </div>
         <section className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
           {CARDS.map((card) => (
             <div key={card.label} className={`relative overflow-hidden rounded-2xl border p-4 ${card.suave} hover:shadow-md transition`}>
@@ -219,6 +261,12 @@ export default async function DashboardPage({
             </div>
           ))}
         </section>
+
+        {periodo.tipo !== 'todos' && (
+          <p className="text-[11px] text-gray-400 -mt-3 mb-5">
+            Vagas e candidatos: criados no período · Desligamentos: pela data de saída · Colaboradores ativos: situação atual.
+          </p>
+        )}
 
         {colaboradoresDesligados > 0 && (
           <div className="bg-white rounded-2xl border p-5 mb-6">
@@ -262,7 +310,7 @@ export default async function DashboardPage({
                 <Link href="/vagas" className="text-xs text-indigo-600 font-medium hover:underline">Ver todas →</Link>
               </div>
               {vagasDestaque.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">Nenhuma vaga criada ainda.</p>
+                <p className="text-sm text-gray-400 text-center py-6">{periodo.tipo === 'todos' ? 'Nenhuma vaga criada ainda.' : 'Nenhuma vaga criada neste período.'}</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
@@ -292,7 +340,7 @@ export default async function DashboardPage({
                 <Link href="/candidatos" className="text-xs text-indigo-600 font-medium hover:underline">Ver todos →</Link>
               </div>
               {!candidatosRecentes || candidatosRecentes.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">Nenhum candidato ainda.</p>
+                <p className="text-sm text-gray-400 text-center py-6">{periodo.tipo === 'todos' ? 'Nenhum candidato ainda.' : 'Nenhum candidato neste período.'}</p>
               ) : (
                 <div className="space-y-3">
                   {candidatosRecentes.map((c) => (

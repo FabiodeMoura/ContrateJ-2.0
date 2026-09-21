@@ -5,13 +5,15 @@ import MobileNav from '@/components/MobileNav'
 import NovaVagaButton from './NovaVagaButton'
 import AcoesVaga from './AcoesVaga'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import FiltroPeriodo from '@/components/FiltroPeriodo'
+import { ParametrosPeriodo, resolverPeriodo, aplicarPeriodo } from '@/lib/periodo'
 import Link from 'next/link'
 import { SEGMENTOS_INFO } from '@/lib/segmentos'
 
 export default async function VagasPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string }
+  searchParams: { empresa?: string } & ParametrosPeriodo
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -36,11 +38,17 @@ export default async function VagasPage({
     listaEmpresas.map((e) => [e.id, e.nome_fantasia])
   )
 
-  const { data: vagas } = await supabase
-    .from('vagas')
-    .select('id, funcao, status, token_link, empresa_id, candidatos ( id, percentual_aderencia )')
-    .in('empresa_id', idsVisiveis.length ? idsVisiveis : ['00000000-0000-0000-0000-000000000000'])
-    .order('criado_em', { ascending: false })
+  // Calendário: vagas geradas no dia, mês, ano ou intervalo escolhido
+  const periodo = resolverPeriodo(searchParams)
+  const consultaVagas = aplicarPeriodo(
+    supabase
+      .from('vagas')
+      .select('id, funcao, status, token_link, empresa_id, criado_em, candidatos ( id, percentual_aderencia )')
+      .in('empresa_id', idsVisiveis.length ? idsVisiveis : ['00000000-0000-0000-0000-000000000000']),
+    'criado_em',
+    periodo
+  ).order('criado_em', { ascending: false })
+  const { data: vagas } = await consultaVagas
 
   const { data: perfis } = await supabase.from('perfis_disc').select('id, funcao').order('funcao')
 
@@ -55,11 +63,13 @@ export default async function VagasPage({
               {filtro === 'todas'
                 ? `Todas as empresas (${listaEmpresas.length})`
                 : nomePorEmpresaId[filtro] ?? 'Selecione uma empresa'}
+              {periodo.tipo !== 'todos' && <span> · 📅 {periodo.rotulo}</span>}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
             <EmpresaSelector empresas={listaEmpresas} valorAtual={filtro} incluirTodas={varias} />
+            <FiltroPeriodo />
             {empresaId && perfis && (
               <NovaVagaButton empresas={empresas ?? []} empresaIdPadrao={empresaId} perfis={perfis} />
             )}
@@ -129,7 +139,9 @@ export default async function VagasPage({
               {(!vagas || vagas.length === 0) && (
                 <tr>
                   <td colSpan={varias ? 6 : 5} className="p-6 text-center text-gray-400 text-sm">
-                    Nenhuma vaga gerada ainda. Clique em &quot;Nova vaga&quot; pra começar.
+                    {periodo.tipo === 'todos'
+                      ? 'Nenhuma vaga gerada ainda. Clique em "Nova vaga" pra começar.'
+                      : `Nenhuma vaga gerada em ${periodo.rotulo.toLowerCase()}.`}
                   </td>
                 </tr>
               )}
