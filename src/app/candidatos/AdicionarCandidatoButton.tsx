@@ -32,6 +32,7 @@ export default function AdicionarCandidatoButton({
   const [cidade, setCidade] = useState('')
   const [formacao, setFormacao] = useState('')
   const [experiencia, setExperiencia] = useState('')
+  const [destaqueIa, setDestaqueIa] = useState<string | null>(null)
   const [empresaId, setEmpresaId] = useState(empresaIdPadrao)
   const [vagaId, setVagaId] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -63,6 +64,7 @@ export default function AdicionarCandidatoButton({
     setCidade('')
     setFormacao('')
     setExperiencia('')
+    setDestaqueIa(null)
     setAviso(null)
   }
 
@@ -90,6 +92,7 @@ export default function AdicionarCandidatoButton({
       if (d.cidade) setCidade(d.cidade)
       if (d.formacao) setFormacao(d.formacao)
       if (d.experiencia_resumo) setExperiencia(d.experiencia_resumo)
+      setDestaqueIa(d.destaque ?? null)
       setAviso('Dados preenchidos a partir do currículo. Confira antes de salvar.')
     } catch {
       setErro('Erro de conexão ao ler o currículo. Tente de novo.')
@@ -112,14 +115,21 @@ export default function AdicionarCandidatoButton({
       cidade: cidade.trim() || null,
       formacao: formacao.trim() || null,
       experiencia_resumo: experiencia.trim() || null,
-      status: 'Em análise',
+      destaque_ia: destaqueIa,
+      // Entra na fila "Candidaturas recebidas". O link só é enviado (e o crédito só é
+      // descontado) quando o gestor aprovar ali.
+      status: 'Aguardando aprovação',
     })
 
     setSalvando(false)
 
     if (error) {
       console.error('Erro ao cadastrar candidato:', error)
-      setErro(`Não foi possível salvar: ${error.message}`)
+      if (error.code === '23505') {
+        setErro('Esse e-mail já está na fila de candidaturas desta vaga.')
+      } else {
+        setErro(`Não foi possível salvar: ${error.message}`)
+      }
       return
     }
 
@@ -253,8 +263,8 @@ export default function AdicionarCandidatoButton({
             </select>
 
             <p className="text-[11px] text-gray-400 mb-3">
-              O candidato entra na lista sem avaliação DISC ainda — envie o link do questionário
-              pela tela de Vagas quando quiser avaliá-lo.
+              O candidato entra na fila &quot;Candidaturas recebidas&quot;, sem gastar link. O link só
+              é enviado (e o crédito só é descontado) quando você aprovar por lá.
             </p>
 
             {erro && <p className="text-red-600 text-xs mb-3">{erro}</p>}

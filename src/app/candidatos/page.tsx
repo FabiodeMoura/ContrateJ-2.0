@@ -8,6 +8,7 @@ import ExportarExcelButton from './ExportarExcelButton'
 import AdicionarCandidatoButton from './AdicionarCandidatoButton'
 import EmpresaSelector from '@/components/EmpresaSelector'
 import GerarLinkEntrevista from './GerarLinkEntrevista'
+import FilaCandidaturas from './FilaCandidaturas'
 
 export default async function CandidatosPage({
   searchParams,
@@ -39,10 +40,39 @@ export default async function CandidatosPage({
     .select('id, funcao, empresa_id')
     .in('empresa_id', idsEmpresas.length ? idsEmpresas : ['00000000-0000-0000-0000-000000000000'])
 
+  // Candidaturas recebidas (currículo importado), aguardando o gestor aprovar o envio da avaliação
+  const { data: fila } = await supabase
+    .from('candidatos')
+    .select('id, nome_completo, email, whatsapp, cidade, formacao, experiencia_resumo, destaque_ia, status, vaga_id, vagas ( funcao, token_link )')
+    .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
+    .in('status', ['Aguardando aprovação', 'Em espera'])
+    .order('status', { ascending: true }) // "Aguardando aprovação" antes de "Em espera"
+    .order('criado_em', { ascending: true })
+
+  const itensFila = (fila ?? []).map((c: any) => {
+    const vaga = Array.isArray(c.vagas) ? c.vagas[0] : c.vagas
+    return {
+      id: c.id,
+      nome_completo: c.nome_completo,
+      email: c.email,
+      whatsapp: c.whatsapp,
+      cidade: c.cidade,
+      formacao: c.formacao,
+      experiencia_resumo: c.experiencia_resumo,
+      destaque_ia: c.destaque_ia,
+      status: c.status,
+      vaga_id: c.vaga_id,
+      funcao: vaga?.funcao ?? '',
+      token_link: vaga?.token_link ?? '',
+    }
+  })
+
+  // Candidatos já avaliados (respondeu ou está em algum estágio do processo)
   const { data: candidatos } = await supabase
     .from('candidatos')
     .select('id, nome_completo, email, whatsapp, cidade, formacao, experiencia_resumo, percentual_aderencia, recomendacao, status, link_entrevista, vagas ( funcao )')
     .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
+    .in('status', ['Em análise', 'Entrevistado', 'Aprovado', 'Reprovado'])
     .order('percentual_aderencia', { ascending: false })
 
   return (
@@ -73,6 +103,8 @@ export default async function CandidatosPage({
             <ExportarExcelButton candidatos={candidatos ?? []} />
           </div>
         </div>
+
+        <FilaCandidaturas itens={itensFila} />
 
         {/* Celular: lista em cartões, com tudo visível sem precisar rolar pro lado */}
         <div className="md:hidden space-y-3">

@@ -7,6 +7,7 @@ export interface DadosCurriculo {
   cidade: string | null
   formacao: string | null
   experiencia_resumo: string | null
+  destaque: string | null // sugestão curta da IA (ex.: "Experiência em cozinha") — só informativo
 }
 
 export const TAMANHO_MAXIMO = 5 * 1024 * 1024 // 5 MB
@@ -22,7 +23,10 @@ const PEDIDO =
   'Extraia do currículo acima este JSON (use null quando não encontrar):\n' +
   '{"nome_completo": string, "email": string, "whatsapp": string (celular com DDD), ' +
   '"cidade": string (cidade e UF, se houver), "formacao": string (maior formação, curta), ' +
-  '"experiencia_resumo": string (resumo das últimas experiências em até 300 caracteres)}'
+  '"experiencia_resumo": string (resumo das últimas experiências em até 300 caracteres), ' +
+  '"destaque": string (uma frase bem curta, até 40 caracteres, destacando o ponto mais forte ' +
+  'do currículo para um gestor decidir se chama para avaliação — ex.: "Experiência em cozinha", ' +
+  '"5 anos como caixa". null se não houver nada que se destaque)}'
 
 type Bloco =
   | { type: 'text'; text: string }
@@ -67,6 +71,7 @@ export function limparDados(bruto: any): DadosCurriculo {
     cidade: texto(bruto?.cidade, 80),
     formacao: texto(bruto?.formacao, 120),
     experiencia_resumo: texto(bruto?.experiencia_resumo, 300),
+    destaque: texto(bruto?.destaque, 60),
   }
 }
 

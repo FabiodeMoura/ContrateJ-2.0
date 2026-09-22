@@ -318,17 +318,21 @@ export default async function RelatoriosPage({
               <p className="font-medium text-sm mb-1">Turnover</p>
               <p className="text-xs text-gray-400">
                 Colaboradores e entrevista de desligamento — <strong>{nomeEscopoTurnover}</strong>
+                {periodo.tipo !== 'todos' && <span> · 📅 {periodo.rotulo}</span>}
               </p>
             </div>
-            {listaEmpresas.length > 1 && (
-              <EmpresaSelector
-                empresas={listaEmpresas}
-                valorAtual={turnoverEmpresaId}
-                incluirTodas
-                parametro="turnover"
-                ancora="turnover"
-              />
-            )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              {listaEmpresas.length > 1 && (
+                <EmpresaSelector
+                  empresas={listaEmpresas}
+                  valorAtual={turnoverEmpresaId}
+                  incluirTodas
+                  parametro="turnover"
+                  ancora="turnover"
+                />
+              )}
+              <FiltroPeriodo />
+            </div>
           </div>
 
           {totalColaboradores === 0 ? (
