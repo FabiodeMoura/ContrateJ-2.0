@@ -8,12 +8,10 @@ import { salvarRespostasPendente } from '@/lib/filaOffline'
 
 interface Pergunta {
   id: string
-  ordem: number
   texto_pergunta: string
-  opcao_d: string
-  opcao_i: string
-  opcao_s: string
-  opcao_c: string
+  // Alternativas já na ordem embaralhada que veio do servidor (sorteada e guardada
+  // por candidato/pergunta) — nunca reordenar aqui, e nunca supor uma ordem fixa.
+  alternativas: { letra: 'D' | 'I' | 'S' | 'C'; texto: string }[]
 }
 
 export default function QuizClient({
@@ -140,18 +138,15 @@ export default function QuizClient({
             </div>
           ) : (
             <>
-              <button onClick={() => escolher('D')} className="text-left border rounded-lg px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50 transition">
-                {perguntaAtual.opcao_d}
-              </button>
-              <button onClick={() => escolher('I')} className="text-left border rounded-lg px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50 transition">
-                {perguntaAtual.opcao_i}
-              </button>
-              <button onClick={() => escolher('S')} className="text-left border rounded-lg px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50 transition">
-                {perguntaAtual.opcao_s}
-              </button>
-              <button onClick={() => escolher('C')} className="text-left border rounded-lg px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50 transition">
-                {perguntaAtual.opcao_c}
-              </button>
+              {perguntaAtual.alternativas.map((alt) => (
+                <button
+                  key={alt.letra}
+                  onClick={() => escolher(alt.letra)}
+                  className="text-left border rounded-lg px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50 transition"
+                >
+                  {alt.texto}
+                </button>
+              ))}
             </>
           )}
         </div>
