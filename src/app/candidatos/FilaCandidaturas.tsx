@@ -17,12 +17,24 @@ interface ItemFila {
   status: string
   vaga_id: string
   funcao: string
+  nome_empresa: string
   token_link: string
+}
+
+interface Envio {
+  nome: string
+  mensagem: string
+  link: string
 }
 
 function linkAvaliacao(tokenLink: string, candidatoId: string) {
   const base = typeof window !== 'undefined' ? window.location.origin : ''
   return `${base}/quiz/${tokenLink}?candidato=${candidatoId}`
+}
+
+function mensagemPadrao(item: ItemFila, link: string) {
+  const primeiroNome = item.nome_completo.split(' ')[0]
+  return `Olá, ${primeiroNome}! Recebemos seu currículo para a vaga de ${item.funcao} na ${item.nome_empresa}. Acesse o link para responder a avaliação: ${link}`
 }
 
 function numeroWhatsapp(bruto: string) {
@@ -35,6 +47,10 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
   const [erro, setErro] = useState<string | null>(null)
   const [avisoLote, setAvisoLote] = useState<string | null>(null)
+  // Candidaturas já aprovadas nesta visita, aguardando você copiar ou mandar o link.
+  // Fica guardado aqui (e não só no item da fila) porque, assim que aprova, o item some
+  // da fila — mas o link ainda precisa ser enviado.
+  const [envios, setEnvios] = useState<Record<string, Envio>>({})
   const router = useRouter()
   const supabase = createClient()
 
@@ -47,9 +63,9 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
     })
   }
 
-  // Aprova UM candidato: confere se sobra link no plano, só então gera e envia o link e
-  // desconta o crédito. Se não sobrar link, avisa e não manda nada.
-  async function aprovar(item: ItemFila, abrirWhatsapp: boolean): Promise<'enviado' | 'sem_links' | 'erro'> {
+  // Aprova UM candidato: confere se sobra link no plano, só então desconta o crédito e
+  // prepara o link para você copiar ou mandar pelo WhatsApp — nenhum dos dois é obrigatório.
+  async function aprovar(item: ItemFila): Promise<'enviado' | 'sem_links' | 'erro'> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setErro('Sessão expirada. Atualize a página e faça login novamente.')
@@ -73,11 +89,11 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
       return 'erro'
     }
 
-    if (abrirWhatsapp) {
-      const link = linkAvaliacao(item.token_link, item.id)
-      const mensagem = `Olá, ${item.nome_completo.split(' ')[0]}! Recebemos seu currículo para a vaga de ${item.funcao}. Acesse o link para responder a avaliação: ${link}`
-      window.open(`https://wa.me/${numeroWhatsapp(item.whatsapp)}?text=${encodeURIComponent(mensagem)}`, '_blank')
-    }
+    const link = linkAvaliacao(item.token_link, item.id)
+    setEnvios((atual) => ({
+      ...atual,
+      [item.id]: { nome: item.nome_completo, link, mensagem: mensagemPadrao(item, link) },
+    }))
 
     return 'enviado'
   }
@@ -85,7 +101,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
   async function aprovarUm(item: ItemFila) {
     setErro(null)
     setProcessando(item.id)
-    await aprovar(item, true)
+    await aprovar(item)
     setProcessando(null)
     router.refresh()
   }
@@ -99,7 +115,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
 
     let enviados = 0
     for (const item of lista) {
-      const resultado = await aprovar(item, false) // em lote não abre o WhatsApp de cada um
+      const resultado = await aprovar(item)
       if (resultado === 'enviado') enviados++
       else if (resultado === 'sem_links') break // para o lote assim que o saldo acabar
     }
@@ -108,7 +124,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
     setSelecionados(new Set())
     setAvisoLote(
       enviados === lista.length
-        ? `${enviados} candidatura(s) aprovada(s). Envie o link de cada um pelo WhatsApp na lista.`
+        ? `${enviados} candidatura(s) aprovada(s). Copie ou envie o link de cada um abaixo.`
         : `${enviados} de ${lista.length} aprovada(s) — o saldo de links acabou no meio do caminho.`
     )
     router.refresh()
@@ -122,20 +138,83 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
     router.refresh()
   }
 
-  if (itens.length === 0) return null
+  function copiar(envio: Envio) {
+    navigator.clipboard.writeText(envio.mensagem)
+    alert('Mensagem copiada!')
+  }
+
+  function abrirWhatsapp(item: ItemFila | undefined, envio: Envio) {
+    const numero = item ? numeroWhatsapp(item.whatsapp) : ''
+    const url = numero
+      ? `https://wa.me/${numero}?text=${encodeURIComponent(envio.mensagem)}`
+      : `https://wa.me/?text=${encodeURIComponent(envio.mensagem)}`
+    window.open(url, '_blank')
+  }
+
+  function dispensarEnvio(id: string) {
+    setEnvios((atual) => {
+      const novo = { ...atual }
+      delete novo[id]
+      return novo
+    })
+  }
+
+  const idsComEnvioPendente = Object.keys(envios)
+  const itensDaFila = itens.filter((i) => !envios[i.id])
+
+  if (itensDaFila.length === 0 && idsComEnvioPendente.length === 0) return null
 
   return (
     <div className="bg-white rounded-xl border p-4 mb-6">
       <div className="flex items-center justify-between mb-1">
         <p className="font-medium text-sm">📥 Candidaturas recebidas</p>
-        <span className="text-xs text-gray-400">{itens.length} aguardando decisão</span>
+        {itensDaFila.length > 0 && (
+          <span className="text-xs text-gray-400">{itensDaFila.length} aguardando decisão</span>
+        )}
       </div>
       <p className="text-[11px] text-gray-400 mb-3">
-        Chegaram pelo currículo importado. Nenhum link foi enviado ainda — aprove para mandar a avaliação.
+        Chegaram pelo currículo importado. Nenhum link foi enviado ainda — aprove para gerar o link da avaliação.
       </p>
 
       {erro && <p className="text-red-600 text-xs bg-red-50 rounded-lg px-3 py-2 mb-3">{erro}</p>}
       {avisoLote && <p className="text-indigo-700 text-xs bg-indigo-50 rounded-lg px-3 py-2 mb-3">{avisoLote}</p>}
+
+      {/* Aprovados agora: link pronto para copiar ou mandar pelo WhatsApp */}
+      {idsComEnvioPendente.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {idsComEnvioPendente.map((id) => {
+            const envio = envios[id]
+            const item = itens.find((i) => i.id === id)
+            return (
+              <div key={id} className="border border-green-200 bg-green-50/60 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-medium text-green-800">✓ {envio.nome} — aprovado</p>
+                  <button onClick={() => dispensarEnvio(id)} className="text-[11px] text-gray-400 hover:text-gray-600">
+                    Concluído, ocultar
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600 bg-white border rounded-lg px-2.5 py-1.5 break-all mb-2">
+                  {envio.link}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirWhatsapp(item, envio)}
+                    className="flex-1 bg-green-600 text-white text-xs font-medium rounded-lg py-2"
+                  >
+                    📱 Enviar por WhatsApp
+                  </button>
+                  <button
+                    onClick={() => copiar(envio)}
+                    className="flex-1 border text-xs font-medium rounded-lg py-2"
+                  >
+                    🔗 Copiar mensagem
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {selecionados.size > 0 && (
         <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-3">
@@ -151,7 +230,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
       )}
 
       <div className="space-y-2">
-        {itens.map((item) => (
+        {itensDaFila.map((item) => (
           <div key={item.id} className="border rounded-lg p-3 flex items-start gap-3">
             <input
               type="checkbox"
@@ -173,7 +252,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500">{item.funcao} · {item.whatsapp}</p>
+              <p className="text-xs text-gray-500">{item.funcao} · {item.nome_empresa} · {item.whatsapp}</p>
               {(item.cidade || item.formacao) && (
                 <p className="text-[11px] text-gray-400">{[item.cidade, item.formacao].filter(Boolean).join(' · ')}</p>
               )}
@@ -187,7 +266,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
                 disabled={processando === item.id}
                 className="text-xs font-medium bg-indigo-600 text-white rounded-lg px-3 py-1.5 whitespace-nowrap disabled:opacity-60"
               >
-                {processando === item.id ? '...' : '✓ Aprovar e enviar'}
+                {processando === item.id ? '...' : '✓ Aprovar'}
               </button>
               <div className="flex gap-1.5">
                 {item.status !== 'Em espera' && (

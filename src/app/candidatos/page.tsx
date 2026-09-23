@@ -43,12 +43,15 @@ export default async function CandidatosPage({
   // Candidaturas recebidas (currículo importado), aguardando o gestor aprovar o envio da avaliação
   const { data: fila } = await supabase
     .from('candidatos')
-    .select('id, nome_completo, email, whatsapp, cidade, formacao, experiencia_resumo, destaque_ia, status, vaga_id, vagas ( funcao, token_link )')
+    .select('id, nome_completo, email, whatsapp, cidade, formacao, experiencia_resumo, destaque_ia, status, vaga_id, vagas ( funcao, token_link, empresa_id )')
     .in('vaga_id', vagaIds.length ? vagaIds : ['00000000-0000-0000-0000-000000000000'])
     .in('status', ['Aguardando aprovação', 'Em espera'])
     .order('status', { ascending: true }) // "Aguardando aprovação" antes de "Em espera"
     .order('criado_em', { ascending: true })
 
+  const nomeEmpresaPorId: Record<string, string> = Object.fromEntries(
+    (empresas ?? []).map((e) => [e.id, e.nome_fantasia])
+  )
   const itensFila = (fila ?? []).map((c: any) => {
     const vaga = Array.isArray(c.vagas) ? c.vagas[0] : c.vagas
     return {
@@ -63,6 +66,7 @@ export default async function CandidatosPage({
       status: c.status,
       vaga_id: c.vaga_id,
       funcao: vaga?.funcao ?? '',
+      nome_empresa: nomeEmpresaPorId[vaga?.empresa_id] ?? '',
       token_link: vaga?.token_link ?? '',
     }
   })
