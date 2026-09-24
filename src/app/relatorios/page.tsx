@@ -21,7 +21,7 @@ export default async function RelatoriosPage({
 
   const { data: empresas } = await supabase
     .from('minhas_empresas')
-    .select('id, nome_fantasia')
+    .select('id, nome_fantasia, segmento_principal, cnpj, logo_url, criado_em')
 
   const empresasDaConta = empresas ?? []
   const variasEmpresas = empresasDaConta.length > 1

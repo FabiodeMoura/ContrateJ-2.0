@@ -45,7 +45,24 @@ export default async function PlanosPage() {
     .from('assinaturas')
     .select('plano, limite_links, links_usados, links_extras')
     .eq('dono_id', user.id)
-    .single()
+    .maybeSingle()
+
+  // Só o administrador (quem criou a conta) compra planos e links avulsos.
+  // Um usuário vinculado a uma empresa não tem assinatura própria.
+  if (!assinatura) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 md:pl-56">
+        <Sidebar ativo="/planos" />
+        <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
+          <h1 className="text-lg font-semibold mb-1">Planos</h1>
+          <p className="text-sm text-gray-500 mt-4">
+            Somente o administrador da conta pode ver e comprar planos ou links avulsos.
+          </p>
+        </main>
+        <MobileNav />
+      </div>
+    )
+  }
 
   // Assinatura cancelada mas ainda dentro do período pago: mostra até quando vai o acesso
   const { data: cancelamentos } = await supabase

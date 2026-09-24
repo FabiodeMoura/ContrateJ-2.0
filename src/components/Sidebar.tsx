@@ -2,6 +2,8 @@ import Link from 'next/link'
 import NovaEmpresaButton from './NovaEmpresaButton'
 import { MARCA, fraseDoDia } from '@/lib/frases'
 import LogoMarca from './LogoMarca'
+import { createServerSupabase } from '@/lib/supabaseServer'
+import { souAdministrador } from '@/lib/permissoes'
 
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', cor: 'from-white/25 to-white/10' },
@@ -9,11 +11,17 @@ const ITENS = [
   { href: '/candidatos', label: 'Candidatos', icon: '👥', cor: 'from-white/25 to-white/10' },
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪', cor: 'from-white/25 to-white/10' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-white/25 to-white/10' },
-  { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10' },
-  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', cor: 'from-white/25 to-white/10' },
+  { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10', apenasAdmin: true },
+  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', cor: 'from-white/25 to-white/10', apenasAdmin: true },
+  { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', cor: 'from-white/25 to-white/10', apenasAdmin: true },
 ]
 
-export default function Sidebar({ ativo }: { ativo: string }) {
+export default async function Sidebar({ ativo }: { ativo: string }) {
+  const supabase = createServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  const admin = user ? await souAdministrador(supabase, user.id) : false
+  const itens = ITENS.filter((item) => !item.apenasAdmin || admin)
+
   return (
     <aside
       className="hidden md:flex md:w-56 bg-gradient-to-b from-slate-700 via-teal-600 to-lime-400 text-white overflow-y-auto z-10"
@@ -28,7 +36,7 @@ export default function Sidebar({ ativo }: { ativo: string }) {
           {MARCA.tagline}
         </p>
 
-        {ITENS.map((item) => (
+        {itens.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -44,7 +52,7 @@ export default function Sidebar({ ativo }: { ativo: string }) {
             <span>{item.label}</span>
           </Link>
         ))}
-        <NovaEmpresaButton />
+        {admin && <NovaEmpresaButton />}
       </div>
 
       {/* painel decorativo — mesma paleta amarelo/laranja do resto do menu, sem "banner" separado */}

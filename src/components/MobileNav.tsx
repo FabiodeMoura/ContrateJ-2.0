@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LogoMarca from './LogoMarca'
 import NovaEmpresaButton from './NovaEmpresaButton'
+import { createClient } from '@/lib/supabaseClient'
 
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -12,13 +13,29 @@ const ITENS = [
   { href: '/candidatos', label: 'Candidatos', icon: '👥' },
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈' },
-  { href: '/planos', label: 'Planos', icon: '⭐' },
-  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼' },
+  { href: '/planos', label: 'Planos', icon: '⭐', apenasAdmin: true },
+  { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', apenasAdmin: true },
+  { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', apenasAdmin: true },
 ]
 
 export default function MobileNav() {
   const [aberto, setAberto] = useState(false)
+  const [admin, setAdmin] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    // Só o administrador (quem paga o plano) vê Planos, Novo usuário e Empresas cadastradas.
+    async function carregar() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('assinaturas').select('dono_id').eq('dono_id', user.id).maybeSingle()
+      setAdmin(!!data)
+    }
+    carregar()
+  }, [])
+
+  const itens = ITENS.filter((item) => !item.apenasAdmin || admin)
 
   return (
     <>
@@ -49,7 +66,7 @@ export default function MobileNav() {
 
             <p className="text-[11px] uppercase tracking-wider text-white/70 font-semibold mb-1 px-1">Menu</p>
 
-            {ITENS.map((item) => (
+            {itens.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -63,9 +80,11 @@ export default function MobileNav() {
               </Link>
             ))}
 
-            <div className="mt-2 border-t border-white/15 pt-2">
-              <NovaEmpresaButton />
-            </div>
+            {admin && (
+              <div className="mt-2 border-t border-white/15 pt-2">
+                <NovaEmpresaButton />
+              </div>
+            )}
           </div>
         </div>
       )}
