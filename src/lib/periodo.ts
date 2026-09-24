@@ -1,10 +1,11 @@
 // Filtro de período (dia, mês, ano ou intervalo) usado no painel, nos relatórios e nas vagas.
-// Os parâmetros ficam na URL: p (tipo), d (dia), m (mês), a (ano), de / ate (intervalo).
+// Os parâmetros ficam na URL: p (tipo), d (dia), w (semana, ex. 2026-W39), m (mês), a (ano), de / ate (intervalo).
 // Os dias são contados no horário de Brasília (UTC-3).
 
 export interface ParametrosPeriodo {
   p?: string
   d?: string
+  w?: string
   m?: string
   a?: string
   de?: string
@@ -12,7 +13,7 @@ export interface ParametrosPeriodo {
 }
 
 export interface Periodo {
-  tipo: string // todos | hoje | mes_atual | ano_atual | dia | mes | ano | intervalo
+  tipo: string // todos | hoje | semana_atual | mes_atual | ano_atual | dia | semana | mes | ano | intervalo
   inicio: string | null // ISO, inclusivo
   fim: string | null // ISO, exclusivo
   rotulo: string
@@ -70,6 +71,42 @@ function periodoDoAno(a: string, tipo: string): Periodo | null {
   return { tipo, inicio, fim, rotulo: `Ano de ${a}` }
 }
 
+const EH_SEMANA = /^(\d{4})-W(\d{2})$/
+
+// Semana ISO (segunda a domingo): 2026-W39 -> segunda-feira dessa semana
+export function segundaDaSemana(w: string): string | null {
+  const m = EH_SEMANA.exec(w)
+  if (!m) return null
+  const ano = Number(m[1])
+  const semana = Number(m[2])
+  if (semana < 1 || semana > 53) return null
+  const jan4 = new Date(Date.UTC(ano, 0, 4, 12))
+  const diaSemana = jan4.getUTCDay() || 7
+  jan4.setUTCDate(jan4.getUTCDate() - (diaSemana - 1) + (semana - 1) * 7)
+  return jan4.toISOString().slice(0, 10)
+}
+
+// Semana ISO de um dia (para o "Esta semana")
+export function semanaIso(ymd: string): string {
+  const d = new Date(`${ymd}T12:00:00Z`)
+  const diaSemana = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - diaSemana)
+  const ano = d.getUTCFullYear()
+  const inicioAno = new Date(Date.UTC(ano, 0, 1, 12))
+  const semana = Math.ceil(((d.getTime() - inicioAno.getTime()) / 86400000 + 1) / 7)
+  return `${ano}-W${String(semana).padStart(2, '0')}`
+}
+
+function periodoDaSemana(w: string, tipo: string): Periodo | null {
+  const segunda = segundaDaSemana(w)
+  if (!segunda) return null
+  const domingo = somaDias(segunda, 6)
+  const inicio = diaParaIso(segunda)
+  const fim = diaParaIso(somaDias(segunda, 7))
+  if (!inicio || !fim) return null
+  return { tipo, inicio, fim, rotulo: `Semana de ${formatarDia(segunda)} a ${formatarDia(domingo)}` }
+}
+
 const TODOS: Periodo = { tipo: 'todos', inicio: null, fim: null, rotulo: 'Todo o período' }
 
 export function resolverPeriodo(params: ParametrosPeriodo): Periodo {
@@ -81,6 +118,7 @@ export function resolverPeriodo(params: ParametrosPeriodo): Periodo {
     const fim = diaParaIso(somaDias(hoje, 1))
     return inicio && fim ? { tipo, inicio, fim, rotulo: `Hoje (${formatarDia(hoje)})` } : TODOS
   }
+  if (tipo === 'semana_atual') return periodoDaSemana(semanaIso(hojeEmBrasilia()), tipo) ?? TODOS
   if (tipo === 'mes_atual') return periodoDoMes(hojeEmBrasilia().slice(0, 7), tipo) ?? TODOS
   if (tipo === 'ano_atual') return periodoDoAno(hojeEmBrasilia().slice(0, 4), tipo) ?? TODOS
 
@@ -89,6 +127,7 @@ export function resolverPeriodo(params: ParametrosPeriodo): Periodo {
     const fim = diaParaIso(somaDias(params.d, 1))
     return inicio && fim ? { tipo, inicio, fim, rotulo: `Dia ${formatarDia(params.d)}` } : TODOS
   }
+  if (tipo === 'semana' && params.w) return periodoDaSemana(params.w, tipo) ?? TODOS
   if (tipo === 'mes' && params.m) return periodoDoMes(params.m, tipo) ?? TODOS
   if (tipo === 'ano' && params.a) return periodoDoAno(params.a, tipo) ?? TODOS
 

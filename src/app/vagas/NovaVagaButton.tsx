@@ -33,7 +33,7 @@ export default function NovaVagaButton({
       return
     }
 
-    const uso = await verificarEIncrementarUso(supabase, user.id)
+    const uso = await verificarEIncrementarUso(supabase, user.id, empresaEscolhida)
     if (!uso) {
       setCriando(false)
       setErro('Não foi possível verificar o seu plano agora. Atualize a página e tente novamente.')

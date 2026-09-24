@@ -11,9 +11,14 @@ export interface ResultadoUso {
 // tudo em uma função só do banco, pra evitar corrida entre cliques.
 export async function verificarEIncrementarUso(
   supabase: SupabaseClient,
-  donoId: string
+  donoId: string,
+  empresaId?: string | null
 ): Promise<ResultadoUso | null> {
-  const { data, error } = await supabase.rpc('incrementar_uso_link', { p_dono_id: donoId })
+  // A empresa fica registrada para o Painel Master (links gerados por empresa).
+  const { data, error } = await supabase.rpc('incrementar_uso_link', {
+    p_dono_id: donoId,
+    p_empresa_id: empresaId || null,
+  })
   if (error || !data || data.length === 0) return null
   return data[0] as ResultadoUso
 }

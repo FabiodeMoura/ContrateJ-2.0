@@ -42,7 +42,7 @@ export default function GerarLinkCard({
       return
     }
 
-    const uso = await verificarEIncrementarUso(supabase, user.id)
+    const uso = await verificarEIncrementarUso(supabase, user.id, empresaEscolhida)
     if (!uso) {
       setCarregando(false)
       setErro('Não foi possível verificar o seu plano agora. Atualize a página e tente novamente.')

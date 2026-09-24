@@ -18,6 +18,7 @@ interface ItemFila {
   vaga_id: string
   funcao: string
   nome_empresa: string
+  empresa_id: string
   token_link: string
 }
 
@@ -72,7 +73,7 @@ export default function FilaCandidaturas({ itens }: { itens: ItemFila[] }) {
       return 'erro'
     }
 
-    const uso = await verificarEIncrementarUso(supabase, user.id)
+    const uso = await verificarEIncrementarUso(supabase, user.id, item.empresa_id)
     if (!uso) {
       setErro('Não foi possível verificar o seu plano agora. Tente de novo em instantes.')
       return 'erro'

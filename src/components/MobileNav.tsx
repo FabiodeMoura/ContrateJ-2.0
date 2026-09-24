@@ -16,11 +16,13 @@ const ITENS = [
   { href: '/planos', label: 'Planos', icon: '⭐', apenasAdmin: true },
   { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', apenasAdmin: true },
   { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', apenasAdmin: true },
+  { href: '/master', label: 'Painel Master', icon: '👑', apenasSuperAdmin: true },
 ]
 
 export default function MobileNav() {
   const [aberto, setAberto] = useState(false)
   const [admin, setAdmin] = useState(false)
+  const [superAdmin, setSuperAdmin] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -31,11 +33,13 @@ export default function MobileNav() {
       if (!user) return
       const { data } = await supabase.from('assinaturas').select('dono_id').eq('dono_id', user.id).maybeSingle()
       setAdmin(!!data)
+      const { data: eSuper } = await supabase.rpc('eh_super_admin')
+      setSuperAdmin(!!eSuper)
     }
     carregar()
   }, [])
 
-  const itens = ITENS.filter((item) => !item.apenasAdmin || admin)
+  const itens = ITENS.filter((item) => (!item.apenasAdmin || admin) && (!(item as any).apenasSuperAdmin || superAdmin))
 
   return (
     <>

@@ -1,8 +1,9 @@
 'use client'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { semanaIso, segundaDaSemana } from '@/lib/periodo'
 
-const CHAVES = ['p', 'd', 'm', 'a', 'de', 'ate']
+const CHAVES = ['p', 'd', 'w', 'm', 'a', 'de', 'ate']
 
 function hojeEmBrasilia() {
   return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10)
@@ -32,11 +33,13 @@ export default function FiltroPeriodo() {
   }
 
   function mudarTipo(novo: string) {
-    const limpar: Record<string, string | null> = { d: null, m: null, a: null, de: null, ate: null }
+    const limpar: Record<string, string | null> = { d: null, w: null, m: null, a: null, de: null, ate: null }
     if (novo === 'todos') {
       aplicar({ ...limpar, p: null })
     } else if (novo === 'dia') {
       aplicar({ ...limpar, p: novo, d: hoje })
+    } else if (novo === 'semana') {
+      aplicar({ ...limpar, p: novo, w: semanaIso(hoje) })
     } else if (novo === 'mes') {
       aplicar({ ...limpar, p: novo, m: hoje.slice(0, 7) })
     } else if (novo === 'ano') {
@@ -56,9 +59,11 @@ export default function FiltroPeriodo() {
       <select value={tipo} onChange={(e) => mudarTipo(e.target.value)} className={campo}>
         <option value="todos">Todo o período</option>
         <option value="hoje">Hoje</option>
+        <option value="semana_atual">Esta semana</option>
         <option value="mes_atual">Este mês</option>
         <option value="ano_atual">Este ano</option>
         <option value="dia">Escolher um dia</option>
+        <option value="semana">Escolher uma semana</option>
         <option value="mes">Escolher um mês</option>
         <option value="ano">Escolher um ano</option>
         <option value="intervalo">Intervalo de datas</option>
@@ -71,6 +76,19 @@ export default function FiltroPeriodo() {
           value={searchParams.get('d') ?? hoje}
           onChange={(e) => e.target.value && aplicar({ d: e.target.value })}
         />
+      )}
+      {tipo === 'semana' && (
+        // Escolhe qualquer dia e o painel mostra a semana inteira (segunda a domingo).
+        // Campo de data comum porque o campo de semana não funciona no iPhone.
+        <>
+          <input
+            type="date"
+            className={campo}
+            value={segundaDaSemana(searchParams.get('w') ?? '') ?? hoje}
+            onChange={(e) => e.target.value && aplicar({ w: semanaIso(e.target.value) })}
+          />
+          <span className="text-xs text-gray-500">semana inteira</span>
+        </>
       )}
       {tipo === 'mes' && (
         <input

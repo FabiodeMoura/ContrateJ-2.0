@@ -14,13 +14,16 @@ const ITENS = [
   { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10', apenasAdmin: true },
   { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', cor: 'from-white/25 to-white/10', apenasAdmin: true },
   { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', cor: 'from-white/25 to-white/10', apenasAdmin: true },
+  { href: '/master', label: 'Painel Master', icon: '👑', cor: 'from-white/25 to-white/10', apenasSuperAdmin: true },
 ]
 
 export default async function Sidebar({ ativo }: { ativo: string }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   const admin = user ? await souAdministrador(supabase, user.id) : false
-  const itens = ITENS.filter((item) => !item.apenasAdmin || admin)
+  // Painel Master: só o dono da plataforma (e-mails cadastrados em super_admins no banco)
+  const superAdmin = user ? !!(await supabase.rpc('eh_super_admin')).data : false
+  const itens = ITENS.filter((item) => (!item.apenasAdmin || admin) && (!(item as any).apenasSuperAdmin || superAdmin))
 
   return (
     <aside

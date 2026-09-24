@@ -67,6 +67,7 @@ export default async function CandidatosPage({
       vaga_id: c.vaga_id,
       funcao: vaga?.funcao ?? '',
       nome_empresa: nomeEmpresaPorId[vaga?.empresa_id] ?? '',
+      empresa_id: vaga?.empresa_id ?? '',
       token_link: vaga?.token_link ?? '',
     }
   })
