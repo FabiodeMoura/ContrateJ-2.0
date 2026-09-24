@@ -211,6 +211,15 @@ export default function LoginPage() {
               </div>
             ))}
           </div>
+          {/* Manual em PDF para quem ainda está conhecendo o sistema */}
+          <a
+            href="/manual-contrateja.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-8 bg-white text-slate-800 text-sm font-semibold rounded-xl px-4 py-2.5 shadow-lg hover:bg-lime-50 transition"
+          >
+            📘 Veja como funciona (manual em PDF)
+          </a>
         </div>
 
         <p className="relative text-xs text-teal-100">
@@ -374,6 +383,17 @@ export default function LoginPage() {
           )}
 
           <div className="mt-8 pt-5 border-t text-center space-y-1">
+            <p className="text-xs text-gray-500">
+              Ainda conhecendo o ContrateJá?{' '}
+              <a
+                href="/manual-contrateja.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-teal-700 hover:underline"
+              >
+                📘 Veja o manual em PDF
+              </a>
+            </p>
             <p className="text-xs text-gray-500">
               Precisa de ajuda?{' '}
               <a href="mailto:suporte@contrateja.app.br" className="font-medium text-indigo-600 hover:underline">

@@ -85,7 +85,12 @@ export default async function PlanosPage() {
       <Sidebar ativo="/planos" />
       <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
         <h1 className="text-lg font-semibold mb-1">Planos</h1>
-        <p className="text-xs text-gray-500 mb-6">Escolha o plano ideal pro tamanho do seu processo seletivo</p>
+        <p className="text-xs text-gray-500 mb-6">
+          Escolha o plano ideal pro tamanho do seu processo seletivo ·{' '}
+          <a href="/manual-contrateja.pdf" target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 hover:underline">
+            📘 Veja como funciona cada recurso (manual em PDF)
+          </a>
+        </p>
 
         {acessoAte && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
