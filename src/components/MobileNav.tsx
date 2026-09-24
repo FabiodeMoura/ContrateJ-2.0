@@ -85,14 +85,14 @@ export default function MobileNav() {
             ))}
 
             <a
-              href="/guia-contrateja.pdf"
+              href="/manual-contrateja.pdf"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setAberto(false)}
               className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm transition text-white/90 hover:bg-white/10"
             >
               <span className="text-base">📘</span>
-              Guia do usuário
+              Manual do usuário
             </a>
 
             {admin && (
