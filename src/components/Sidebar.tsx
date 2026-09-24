@@ -56,6 +56,18 @@ export default async function Sidebar({ ativo }: { ativo: string }) {
           </Link>
         ))}
         {admin && <NovaEmpresaButton />}
+        {/* Guia do usuário em PDF (public/guia-contrateja.pdf) — visível para todos, abre em nova aba */}
+        <a
+          href="/guia-contrateja.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition text-white/85 hover:bg-white/10"
+        >
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-white/25 to-white/10 flex items-center justify-center text-sm shrink-0">
+            📘
+          </span>
+          <span>Guia do usuário</span>
+        </a>
       </div>
 
       {/* painel decorativo — mesma paleta amarelo/laranja do resto do menu, sem "banner" separado */}

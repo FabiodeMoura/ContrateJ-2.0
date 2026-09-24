@@ -84,6 +84,17 @@ export default function MobileNav() {
               </Link>
             ))}
 
+            <a
+              href="/guia-contrateja.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setAberto(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm transition text-white/90 hover:bg-white/10"
+            >
+              <span className="text-base">📘</span>
+              Guia do usuário
+            </a>
+
             {admin && (
               <div className="mt-2 border-t border-white/15 pt-2">
                 <NovaEmpresaButton />
