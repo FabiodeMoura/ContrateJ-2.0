@@ -19,6 +19,15 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // Vindo da página de obrigado (/obrigado): abre direto em "Criar conta".
+  // Lido do endereço no navegador (sem useSearchParams, que exigiria Suspense no build).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('modo') === 'cadastrar') setModo('cadastrar')
+    const emailUrl = params.get('email')
+    if (emailUrl) setEmail(emailUrl)
+  }, [])
+
   // Contagem regressiva do pedido de recuperação (o Supabase só aceita 1 pedido por minuto)
   useEffect(() => {
     if (aguardar <= 0) return
