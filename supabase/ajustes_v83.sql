@@ -1,0 +1,4 @@
+-- JÁ APLICADO no Supabase (migração links_extras_consumidos_v83). Arquivo para registro.
+-- Na compra/renovação de plano, os links extras usados no mês saem do saldo antes de zerar o contador:
+--   links_extras = greatest(0, links_extras - greatest(0, links_usados - limite_links)); links_usados = 0
+-- (função public.aplicar_compra_hotmart; o restante igual ao ajustes_v82.sql)
