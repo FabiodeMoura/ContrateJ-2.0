@@ -16,7 +16,7 @@ const SEGMENTOS: Record<
     emoji: '🍽️',
     cor: 'from-orange-400 to-orange-600',
     funcoes: [
-      'Garçom', 'Cozinheiro', 'Auxiliar de Cozinha', 'Chapeiro', 'Gerente',
+      'Garçom', 'Copeiro', 'Cozinheiro', 'Auxiliar de Cozinha', 'Chapeiro', 'Gerente',
       'Subgerente', 'Supervisor de Operações', 'Caixa', 'Recepcionista',
       'Segurança', 'Motoboy/Entregador', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal',
     ],
@@ -69,6 +69,7 @@ const ICONES_FUNCAO: Record<string, string> = {
   'Caixa': '💳',
   'Chapeiro': '🍔',
   'Confeiteiro': '🎂',
+  'Copeiro': '🥤',
   'Cozinheiro': '👨‍🍳',
   'Financeiro': '💰',
   'Garçom': '🍴',
