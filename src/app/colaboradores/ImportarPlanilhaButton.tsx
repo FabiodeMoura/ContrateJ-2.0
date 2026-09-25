@@ -11,13 +11,15 @@ interface Empresa {
 }
 
 interface LinhaPlanilha {
-  Nome?: string
-  Email?: string
-  WhatsApp?: string
-  CPF?: string
-  Empresa?: string
-  'Função'?: string
+  nome: string
+  email: string
+  whatsapp: string
+  cpf: string
+  empresa: string
+  funcao: string
 }
+
+type Campo = keyof LinhaPlanilha
 
 function normalizar(texto: string) {
   return texto
@@ -25,6 +27,51 @@ function normalizar(texto: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase()
+}
+
+// Reconhece os títulos das colunas do modelo novo ("Nome completo *", "WhatsApp (com DDD)"...)
+// e do modelo antigo ("Nome", "Email"...). Compara só as letras, sem acento.
+const CAMPOS: { campo: Campo; comeca: string[] }[] = [
+  { campo: 'nome', comeca: ['nome'] },
+  { campo: 'email', comeca: ['email'] },
+  { campo: 'whatsapp', comeca: ['whatsapp', 'telefone', 'celular'] },
+  { campo: 'cpf', comeca: ['cpf'] },
+  { campo: 'empresa', comeca: ['empresa', 'loja', 'unidade'] },
+  { campo: 'funcao', comeca: ['funcao', 'cargo'] },
+]
+
+function chave(texto: unknown) {
+  return normalizar(String(texto ?? '')).replace(/[^a-z]/g, '')
+}
+
+function lerLinhas(livro: XLSX.WorkBook): LinhaPlanilha[] | null {
+  const nomeAba = livro.SheetNames.find((n) => normalizar(n) === 'colaboradores') ?? livro.SheetNames[0]
+  const matriz: unknown[][] = XLSX.utils.sheet_to_json(livro.Sheets[nomeAba], { header: 1, raw: false, defval: '' })
+
+  // A linha de títulos pode não ser a primeira (o modelo tem a logo e instruções em cima)
+  for (let i = 0; i < Math.min(matriz.length, 30); i++) {
+    const titulos = matriz[i].map(chave)
+    const posicao: Partial<Record<Campo, number>> = {}
+    for (const { campo, comeca } of CAMPOS) {
+      const idx = titulos.findIndex((t) => comeca.some((c) => t.startsWith(c)))
+      if (idx >= 0) posicao[campo] = idx
+    }
+    if (posicao.nome === undefined || posicao.empresa === undefined) continue
+
+    return matriz.slice(i + 1).map((linha) => {
+      const valor = (campo: Campo) =>
+        posicao[campo] === undefined ? '' : String(linha[posicao[campo]!] ?? '').trim()
+      return {
+        nome: valor('nome'),
+        email: valor('email'),
+        whatsapp: valor('whatsapp'),
+        cpf: valor('cpf'),
+        empresa: valor('empresa'),
+        funcao: valor('funcao'),
+      }
+    })
+  }
+  return null
 }
 
 export default function ImportarPlanilhaButton({ empresas }: { empresas: Empresa[] }) {
@@ -43,18 +90,30 @@ export default function ImportarPlanilhaButton({ empresas }: { empresas: Empresa
 
     const dados = await arquivo.arrayBuffer()
     const livro = XLSX.read(dados)
-    const planilha = livro.Sheets[livro.SheetNames[0]]
-    const linhas: LinhaPlanilha[] = XLSX.utils.sheet_to_json(planilha)
+    const linhas = lerLinhas(livro)
+    if (!linhas) {
+      setCarregando(false)
+      setResultado({
+        importados: 0,
+        ignorados: ['Não encontrei as colunas "Nome completo" e "Empresa". Use o modelo em "Baixar modelo".'],
+      })
+      if (inputRef.current) inputRef.current.value = ''
+      return
+    }
 
     const paraInserir: any[] = []
     const ignorados: string[] = []
 
     for (const linha of linhas) {
-      const nome = linha.Nome?.toString().trim()
-      const nomeEmpresaPlanilha = linha.Empresa?.toString().trim()
+      const nome = linha.nome
+      const nomeEmpresaPlanilha = linha.empresa
+
+      // linha totalmente vazia (o modelo já vem com linhas formatadas) ou a linha de exemplo
+      if (Object.values(linha).every((v) => !v)) continue
+      if (normalizar(nome).startsWith('exemplo')) continue
 
       if (!nome || !nomeEmpresaPlanilha) {
-        ignorados.push(`Linha sem nome ou empresa: ${JSON.stringify(linha)}`)
+        ignorados.push(`${nome || 'Linha sem nome'}: falta ${!nome ? 'o nome' : 'a empresa'}`)
         continue
       }
 
@@ -70,10 +129,10 @@ export default function ImportarPlanilhaButton({ empresas }: { empresas: Empresa
       paraInserir.push({
         empresa_id: empresaEncontrada.id,
         nome_completo: nome,
-        email: linha.Email?.toString().trim() ?? null,
-        whatsapp: linha.WhatsApp?.toString().trim() ?? null,
-        cpf: linha.CPF?.toString().trim() ?? null,
-        funcao: linha['Função']?.toString().trim() ?? null,
+        email: linha.email || null,
+        whatsapp: linha.whatsapp || null,
+        cpf: linha.cpf || null,
+        funcao: linha.funcao || null,
         status: 'Ativo',
       })
     }
