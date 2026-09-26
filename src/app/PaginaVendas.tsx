@@ -276,6 +276,8 @@ export default function PaginaVendas() {
           <div className="flex flex-wrap gap-5 justify-center">
             <a href="/manual-contrateja.pdf" target="_blank" rel="noopener noreferrer" className="hover:text-teal-700">📘 Manual do usuário</a>
             <a href="mailto:suporte@contrateja.app.br" className="hover:text-teal-700">suporte@contrateja.app.br</a>
+            <Link href="/termos" className="hover:text-teal-700">Termos de Uso</Link>
+            <Link href="/privacidade" className="hover:text-teal-700">Privacidade</Link>
             <Link href="/login" className="hover:text-teal-700">Entrar</Link>
           </div>
         </div>

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import RegistrarServiceWorker from '@/components/RegistrarServiceWorker'
 import SincronizarFila from '@/components/SincronizarFila'
 import ProvisionarConta from '@/components/ProvisionarConta'
+import MetaPixel from '@/components/MetaPixel'
 
 export const metadata: Metadata = {
   title: 'ContrateJá — Talentos que fazem a diferença no seu negócio',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RegistrarServiceWorker />
         <SincronizarFila />
         <ProvisionarConta />
+        <MetaPixel />
       </body>
     </html>
   )

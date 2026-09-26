@@ -7,6 +7,7 @@ import { createClient as criarClienteRecuperacao } from '@supabase/supabase-js'
 import { MARCA, VALORES_LOGIN } from '@/lib/frases'
 import LogoMarca from '@/components/LogoMarca'
 import { apenasDigitos, formatarCnpj } from '@/lib/validarCnpj'
+import { rastrear } from '@/lib/metaPixel'
 
 const SEGMENTOS = ['Restaurante', 'Bar', 'Lanchonete', 'Padaria', 'Sacolão', 'Pizzaria']
 
@@ -90,6 +91,9 @@ export default function LoginPage() {
       setErro(error?.message ?? 'Não foi possível criar a conta.')
       return
     }
+
+    // Conta criada: avisa o Pixel da Meta (mede os cadastros vindos dos anúncios)
+    rastrear('CompleteRegistration', { content_name: 'Cadastro ContrateJá', status: true })
 
     // Sem sessão = confirmação de e-mail está ativada; a conta/empresa só
     // será criada depois que a pessoa confirmar e logar (ver ProvisionarConta.tsx)
@@ -408,6 +412,11 @@ export default function LoginPage() {
               <a href="mailto:suporte@contrateja.app.br" className="font-medium text-indigo-600 hover:underline">
                 suporte@contrateja.app.br
               </a>
+            </p>
+            <p className="text-[11px] text-gray-400">
+              Ao criar a conta, você concorda com os{' '}
+              <a href="/termos" className="underline hover:text-gray-600">Termos de Uso</a> e a{' '}
+              <a href="/privacidade" className="underline hover:text-gray-600">Política de Privacidade</a>.
             </p>
             <p className="text-[11px] text-gray-400">Desenvolvido por Fábio de Moura</p>
           </div>

@@ -117,6 +117,10 @@ export default function FormularioCandidato({
         <p className="text-[11px] text-gray-400 text-center mt-3">
           Você só poderá responder uma vez
         </p>
+        <p className="text-[11px] text-gray-400 text-center mt-1">
+          Seus dados são usados só neste processo seletivo.{' '}
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline">Política de Privacidade</a>
+        </p>
         </div>
       </div>
     </div>
