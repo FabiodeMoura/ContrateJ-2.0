@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabaseClient'
 import EmpresaSelector from '@/components/EmpresaSelector'
+import FiltroPeriodoEscala from './FiltroPeriodoEscala'
 import {
   CONFIG_PADRAO, DIAS_SEMANA, NOME_OCORRENCIA, SIGLA_OCORRENCIA,
-  diaDaSemana, diasDoMes, hojeIso, horario, nomeDoMes, ocorrenciaDoDia, somarMeses, trabalhaPelaJornada,
-  type ConfigColab, type Jornada, type Ocorrencia, type TipoOcorrencia,
+  diaDaSemana, hojeIso, horario, ocorrenciaDoDia, trabalhaPelaJornada,
+  type ConfigColab, type Jornada, type Ocorrencia, type PeriodoEscala, type TipoOcorrencia,
 } from '@/lib/escala'
 
 interface Colaborador { id: string; nome_completo: string; funcao: string | null }
@@ -25,11 +26,11 @@ const COR: Record<string, string> = {
 }
 
 export default function EscalaCliente({
-  empresas, empresaId, mes, colaboradores, configs, ajustes: ajustesIniciais, ocorrencias,
+  empresas, empresaId, periodo, colaboradores, configs, ajustes: ajustesIniciais, ocorrencias,
 }: {
   empresas: { id: string; nome_fantasia: string }[]
   empresaId: string
-  mes: string
+  periodo: PeriodoEscala
   colaboradores: Colaborador[]
   configs: ConfigColab[]
   ajustes: Ajuste[]
@@ -42,7 +43,7 @@ export default function EscalaCliente({
   const [lancando, setLancando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  const dias = useMemo(() => diasDoMes(mes), [mes])
+  const dias = periodo.dias
   const hoje = hojeIso()
   const empresaNome = empresas.find((e) => e.id === empresaId)?.nome_fantasia ?? ''
 
@@ -104,10 +105,10 @@ export default function EscalaCliente({
   for (const l of linhas) {
     const cfg = cfgDe(l.c.id)
     if (cfg.jornada !== '12x36' && l.maxSeq > 6) alertas.push(`${l.c.nome_completo} trabalha ${l.maxSeq} dias seguidos sem folga.`)
-    if (cfg.jornada !== '12x36' && l.domingos > 0 && l.domingosTrab === l.domingos) alertas.push(`${l.c.nome_completo} trabalha todos os domingos do mês. Confira a regra de folga aos domingos da convenção coletiva.`)
+    if (cfg.jornada !== '12x36' && dias.length >= 28 && l.domingos > 0 && l.domingosTrab === l.domingos) alertas.push(`${l.c.nome_completo} trabalha todos os domingos do período. Confira a regra de folga aos domingos da convenção coletiva.`)
   }
 
-  const hojeNoMes = hoje.slice(0, 7) === mes
+  const hojeNoMes = dias.includes(hoje)
   const resumoHoje = hojeNoMes ? {
     trab: linhas.filter((l) => situacao(l.c.id, hoje) === 'T'),
     folga: linhas.filter((l) => situacao(l.c.id, hoje) === 'F'),
@@ -122,14 +123,14 @@ export default function EscalaCliente({
     })
     const rodape = ['Total trabalhando', '', '', '', ...dias.map((_, i) => linhas.filter((l) => l.sit[i] === 'T').length), '', '']
     const planilha = XLSX.utils.aoa_to_sheet([
-      [`Escala — ${empresaNome} — ${nomeDoMes(mes)}`], [],
+      [`Escala — ${empresaNome} — ${periodo.rotulo}`], [],
       cab, ...corpo, rodape, [],
       ['Legenda: T = trabalha · F = folga · FA = falta · AT = atestado · FE = férias'],
     ])
     planilha['!cols'] = [{ wch: 32 }, { wch: 18 }, { wch: 8 }, { wch: 12 }, ...dias.map(() => ({ wch: 6 })), { wch: 7 }, { wch: 7 }]
     const livro = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(livro, planilha, 'Escala')
-    const nomeArquivo = `escala-${empresaNome}-${mes}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '-').toLowerCase()
+    const nomeArquivo = `escala-${empresaNome}-${dias[0]}-a-${dias[dias.length - 1]}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '-').toLowerCase()
     XLSX.writeFile(livro, `${nomeArquivo}.xlsx`)
   }
 
@@ -139,7 +140,7 @@ export default function EscalaCliente({
     router.refresh()
   }
 
-  const link = (m: string) => `/escala?empresa=${empresaId}&mes=${m}`
+  const link = (q: Record<string, string>) => `/escala?${new URLSearchParams({ empresa: empresaId, ...q }).toString()}`
 
   return (
     <div className="min-w-0">
@@ -150,10 +151,11 @@ export default function EscalaCliente({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <EmpresaSelector empresas={empresas} valorAtual={empresaId} />
+          <FiltroPeriodoEscala periodo={periodo} />
           <div className="flex items-center gap-1">
-            <Link href={link(somarMeses(mes, -1))} className="border bg-white rounded-lg px-3 py-2 text-sm" aria-label="Mês anterior">◀</Link>
-            <span className="border bg-white rounded-lg px-3 py-2 text-sm font-medium min-w-[9.5rem] text-center">{nomeDoMes(mes)}</span>
-            <Link href={link(somarMeses(mes, 1))} className="border bg-white rounded-lg px-3 py-2 text-sm" aria-label="Próximo mês">▶</Link>
+            <Link href={link(periodo.anterior)} className="border bg-white rounded-lg px-3 py-2 text-sm" aria-label="Período anterior">◀</Link>
+            <span className="border bg-white rounded-lg px-3 py-2 text-sm font-medium min-w-[9.5rem] text-center">{periodo.rotulo}</span>
+            <Link href={link(periodo.proximo)} className="border bg-white rounded-lg px-3 py-2 text-sm" aria-label="Próximo período">▶</Link>
           </div>
           <button type="button" onClick={() => setLancando(true)} disabled={colaboradores.length === 0} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50">+ Falta, atestado ou férias</button>
           <button type="button" onClick={baixarExcel} disabled={colaboradores.length === 0} className="border bg-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50">⬇️ Baixar Excel</button>
@@ -161,6 +163,7 @@ export default function EscalaCliente({
       </div>
 
       {erro && <p className="mb-4 text-sm text-red-600">{erro}</p>}
+      {periodo.aviso && <p className="mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{periodo.aviso}</p>}
 
       {resumoHoje && (
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -264,7 +267,7 @@ export default function EscalaCliente({
         <section className="bg-white rounded-2xl border p-5">
           <p className="font-semibold text-sm mb-3">Atenção</p>
           {alertas.length === 0 ? (
-            <p className="text-xs text-gray-500">✓ Nenhum alerta de folga neste mês.</p>
+            <p className="text-xs text-gray-500">✓ Nenhum alerta de folga neste período.</p>
           ) : (
             <ul className="space-y-2">
               {alertas.map((a) => <li key={a} className="text-xs text-gray-700 border-l-4 border-red-500 pl-3">{a}</li>)}
@@ -272,9 +275,9 @@ export default function EscalaCliente({
           )}
         </section>
         <section className="bg-white rounded-2xl border p-5">
-          <p className="font-semibold text-sm mb-3">Faltas, atestados e férias do mês</p>
+          <p className="font-semibold text-sm mb-3">Faltas, atestados e férias do período</p>
           {ocorrencias.length === 0 ? (
-            <p className="text-xs text-gray-500">Nenhuma ausência lançada neste mês.</p>
+            <p className="text-xs text-gray-500">Nenhuma ausência lançada neste período.</p>
           ) : (
             <ul className="divide-y">
               {ocorrencias.map((o) => {
@@ -309,7 +312,7 @@ export default function EscalaCliente({
         <ModalOcorrencia
           colaboradores={colaboradores}
           empresaId={empresaId}
-          diaInicial={hojeNoMes ? hoje : `${mes}-01`}
+          diaInicial={hojeNoMes ? hoje : dias[0]}
           onFechar={() => setLancando(false)}
           onSalvo={() => { setLancando(false); router.refresh() }}
         />

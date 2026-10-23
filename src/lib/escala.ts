@@ -100,3 +100,82 @@ export function ocorrenciaDoDia(ocorrencias: Ocorrencia[], colaboradorId: string
 export function horario(h: string | null): string {
   return h ? h.slice(0, 5) : ''
 }
+
+// ---------- Filtro de período da escala ----------
+// Parâmetros na URL: p = mes | semana | intervalo; m = AAAA-MM; d = um dia da semana; de / ate = intervalo.
+export const MAX_DIAS_INTERVALO = 92
+
+export interface ParametrosPeriodoEscala { p?: string; m?: string; d?: string; de?: string; ate?: string; mes?: string }
+
+export interface PeriodoEscala {
+  tipo: 'mes' | 'semana' | 'intervalo'
+  dias: string[]
+  rotulo: string
+  anterior: Record<string, string>
+  proximo: Record<string, string>
+  aviso: string | null
+}
+
+const EH_DIA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+
+export function somarDias(dia: string, n: number): string {
+  const d = paraData(dia)
+  d.setUTCDate(d.getUTCDate() + n)
+  return paraIso(d)
+}
+
+function intervalo(inicio: string, fim: string): string[] {
+  const dias: string[] = []
+  for (let d = inicio; d <= fim; d = somarDias(d, 1)) dias.push(d)
+  return dias
+}
+
+function diaBr(dia: string): string {
+  return dia.split('-').reverse().join('/')
+}
+
+export function periodoEscala(q: ParametrosPeriodoEscala): PeriodoEscala {
+  const hoje = hojeIso()
+  const tipo = q.p === 'semana' || q.p === 'intervalo' ? q.p : 'mes'
+
+  if (tipo === 'semana') {
+    const base = q.d && EH_DIA.test(q.d) ? q.d : hoje
+    const segunda = somarDias(base, -((diaDaSemana(base) + 6) % 7))
+    const domingo = somarDias(segunda, 6)
+    return {
+      tipo, dias: intervalo(segunda, domingo),
+      rotulo: `Semana de ${diaBr(segunda)} a ${diaBr(domingo)}`,
+      anterior: { p: 'semana', d: somarDias(segunda, -7) },
+      proximo: { p: 'semana', d: somarDias(segunda, 7) },
+      aviso: null,
+    }
+  }
+
+  if (tipo === 'intervalo') {
+    let de = q.de && EH_DIA.test(q.de) ? q.de : `${hoje.slice(0, 7)}-01`
+    let ate = q.ate && EH_DIA.test(q.ate) ? q.ate : hoje
+    if (ate < de) [de, ate] = [ate, de]
+    let aviso: string | null = null
+    const total = Math.round((paraData(ate).getTime() - paraData(de).getTime()) / 86400000) + 1
+    if (total > MAX_DIAS_INTERVALO) {
+      ate = somarDias(de, MAX_DIAS_INTERVALO - 1)
+      aviso = `O período foi limitado a ${MAX_DIAS_INTERVALO} dias (até ${diaBr(ate)}) para a escala caber na tela.`
+    }
+    const tamanho = Math.min(total, MAX_DIAS_INTERVALO)
+    return {
+      tipo, dias: intervalo(de, ate),
+      rotulo: `${diaBr(de)} a ${diaBr(ate)}`,
+      anterior: { p: 'intervalo', de: somarDias(de, -tamanho), ate: somarDias(de, -1) },
+      proximo: { p: 'intervalo', de: somarDias(ate, 1), ate: somarDias(ate, tamanho) },
+      aviso,
+    }
+  }
+
+  const mes = mesValido(q.m ?? q.mes)
+  return {
+    tipo: 'mes', dias: diasDoMes(mes), rotulo: nomeDoMes(mes),
+    anterior: { p: 'mes', m: somarMeses(mes, -1) },
+    proximo: { p: 'mes', m: somarMeses(mes, 1) },
+    aviso: null,
+  }
+}

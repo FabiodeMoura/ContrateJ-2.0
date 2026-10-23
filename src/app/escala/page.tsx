@@ -3,14 +3,14 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import EscalaCliente from './EscalaCliente'
-import { LINK_COMPRA_ESCALA, PRECO_ESCALA, diasDoMes, mesValido } from '@/lib/escala'
+import { LINK_COMPRA_ESCALA, PRECO_ESCALA, periodoEscala } from '@/lib/escala'
 
 // Módulo Escala de Trabalho — vendido à parte (R$ 49,90/mês).
 // Quem tem o módulo vê a escala; quem não tem vê a apresentação com o botão de compra.
 export default async function EscalaPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string; mes?: string }
+  searchParams: { empresa?: string; mes?: string; p?: string; m?: string; d?: string; de?: string; ate?: string }
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,8 +35,8 @@ export default async function EscalaPage({
   const { data: empresas } = await supabase.from('minhas_empresas').select('id, nome_fantasia').order('nome_fantasia')
   const lista = empresas ?? []
   const empresaId = lista.find((e) => e.id === searchParams.empresa)?.id ?? lista[0]?.id ?? null
-  const mes = mesValido(searchParams.mes)
-  const dias = diasDoMes(mes)
+  const periodo = periodoEscala(searchParams)
+  const dias = periodo.dias
   const inicio = dias[0]
   const fim = dias[dias.length - 1]
 
@@ -79,7 +79,7 @@ export default async function EscalaPage({
           <EscalaCliente
             empresas={lista}
             empresaId={empresaId!}
-            mes={mes}
+            periodo={periodo}
             colaboradores={colaboradores}
             configs={configs}
             ajustes={ajustes}
