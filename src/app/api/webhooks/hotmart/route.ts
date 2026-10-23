@@ -124,6 +124,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, erro: 'e-mail não encontrado' })
   }
 
+  // Módulo Escala de Trabalho (R$ 49,90/mês). Reconhecido por:
+  //  - HOTMART_ID_ESCALA (ID do produto, se for um produto separado), ou
+  //  - HOTMART_OFERTA_ESCALA (código da oferta, o trecho depois de "off=" no link), ou
+  //  - nome do plano contendo "49,90" dentro do produto de assinatura (HOTMART_ID_PRODUTO_ASSINATURA).
+  const eEscala =
+    (!!process.env.HOTMART_ID_ESCALA && produtoId === process.env.HOTMART_ID_ESCALA) ||
+    (!!codigoOferta && codigoOferta === process.env.HOTMART_OFERTA_ESCALA) ||
+    (!!process.env.HOTMART_ID_PRODUTO_ASSINATURA && produtoId === process.env.HOTMART_ID_PRODUTO_ASSINATURA && nomePlano.includes('49,90'))
+
+  if (eEscala) {
+    const supabaseEscala = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const fimDoPeriodo = eCancelamento
+      ? paraDataIso(dados.date_next_charge ?? dados.subscription?.date_next_charge ?? dados.purchase?.date_next_charge)
+      : null
+    const { error: erroEscala } = await supabaseEscala.rpc('hotmart_escala', {
+      p_email: email,
+      p_acao: eCompra ? 'compra' : eCancelamento ? 'cancelamento' : 'estorno',
+      p_segredo: segredoInterno,
+      p_chave: chaveAssinatura,
+      p_acesso_ate: fimDoPeriodo,
+      p_transacao: transacao,
+    })
+    if (erroEscala) {
+      console.error(`Erro ao processar ${evento} da Escala no Hotmart:`, erroEscala)
+      return NextResponse.json({ erro: erroEscala.message }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true, modulo: 'escala' })
+  }
+
   let tipo: 'plano_79' | 'plano_99' | 'links_avulsos' | null = null
   let quantidade = 0
 

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 import ComprarLinksExtrasButton from './ComprarLinksExtrasButton'
+import { PRECO_ESCALA } from '@/lib/escala'
 
 const PLANOS = [
   {
@@ -162,6 +163,19 @@ export default async function PlanosPage() {
               )}
             </div>
           ))}
+        </div>
+
+        <div className="rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-50 to-lime-50 p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-teal-700 bg-lime-100 rounded-full px-2 py-1">Módulo à parte</span>
+            <p className="font-semibold mt-2">Escala de trabalho · {PRECO_ESCALA}/mês</p>
+            <p className="text-sm text-gray-600 mt-1 max-w-xl">
+              Folgas 6x1, 5x2 e 12x36, faltas, atestados e férias, alertas e escala em Excel, usando as empresas e os colaboradores que você já tem aqui.
+            </p>
+          </div>
+          <a href="/escala" className="text-center text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg px-5 py-2.5 transition shrink-0">
+            Conhecer a Escala
+          </a>
         </div>
 
         {assinatura?.plano !== 'Gratuito' ? (

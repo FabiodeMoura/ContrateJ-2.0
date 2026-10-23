@@ -25,6 +25,7 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('modo') === 'cadastrar') setModo('cadastrar')
+    if (params.get('bloqueado') === 'escala') setErro('Este e-mail tem acesso apenas à Escala Vila Árabe. Para usar o ContrateJá, crie uma conta com outro e-mail.')
     const emailUrl = params.get('email')
     if (emailUrl) setEmail(emailUrl)
   }, [])
@@ -52,12 +53,23 @@ export default function LoginPage() {
     setErro(null)
 
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    setCarregando(false)
 
     if (error) {
+      setCarregando(false)
       setErro('E-mail ou senha inválidos.')
       return
     }
+
+    // Contas criadas só para a Escala Vila Árabe (sistema à parte) não acessam o ContrateJá
+    const { data: somenteEscala } = await supabase.rpc('eh_somente_escala')
+    if (somenteEscala) {
+      await supabase.auth.signOut()
+      setCarregando(false)
+      setErro('Este e-mail tem acesso apenas à Escala Vila Árabe. Para usar o ContrateJá, crie uma conta com outro e-mail.')
+      return
+    }
+
+    setCarregando(false)
     router.push('/dashboard')
   }
 

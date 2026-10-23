@@ -18,6 +18,14 @@ export default function ProvisionarConta() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // Contas criadas só para a Escala Vila Árabe (sistema à parte) não acessam o ContrateJá
+      const { data: somenteEscala } = await supabase.rpc('eh_somente_escala')
+      if (somenteEscala) {
+        await supabase.auth.signOut()
+        router.replace('/login?bloqueado=escala')
+        return
+      }
+
       const { data: empresas } = await supabase.from('minhas_empresas').select('id').limit(1)
       if (empresas && empresas.length > 0) return // já tem conta, nada a fazer
 

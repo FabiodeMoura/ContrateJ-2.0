@@ -11,6 +11,7 @@ const ITENS = [
   { href: '/candidatos', label: 'Candidatos', icon: '👥', cor: 'from-white/25 to-white/10' },
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪', cor: 'from-white/25 to-white/10' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈', cor: 'from-white/25 to-white/10' },
+  { href: '/escala', label: 'Escala de trabalho', icon: '🗓️', cor: 'from-white/25 to-white/10', novo: true },
   { href: '/planos', label: 'Planos', icon: '⭐', cor: 'from-white/25 to-white/10', apenasAdmin: true },
   { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', cor: 'from-white/25 to-white/10', apenasAdmin: true },
   { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', cor: 'from-white/25 to-white/10', apenasAdmin: true },
@@ -53,6 +54,7 @@ export default async function Sidebar({ ativo }: { ativo: string }) {
               {item.icon}
             </span>
             <span>{item.label}</span>
+            {(item as any).novo && <span className="ml-auto text-[9px] font-bold uppercase bg-white/25 rounded-full px-1.5 py-0.5">Novo</span>}
           </Link>
         ))}
         {admin && <NovaEmpresaButton />}

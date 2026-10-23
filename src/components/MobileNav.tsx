@@ -13,6 +13,7 @@ const ITENS = [
   { href: '/candidatos', label: 'Candidatos', icon: '👥' },
   { href: '/colaboradores', label: 'Colaboradores', icon: '🪪' },
   { href: '/relatorios', label: 'Relatórios', icon: '📈' },
+  { href: '/escala', label: 'Escala de trabalho', icon: '🗓️', novo: true },
   { href: '/planos', label: 'Planos', icon: '⭐', apenasAdmin: true },
   { href: '/equipe', label: 'Novo usuário', icon: '🧑‍💼', apenasAdmin: true },
   { href: '/empresas', label: 'Empresas cadastradas', icon: '🏢', apenasAdmin: true },
@@ -81,6 +82,7 @@ export default function MobileNav() {
               >
                 <span className="text-base">{item.icon}</span>
                 {item.label}
+                {(item as any).novo && <span className="ml-auto text-[9px] font-bold uppercase bg-white/25 rounded-full px-1.5 py-0.5">Novo</span>}
               </Link>
             ))}
 
