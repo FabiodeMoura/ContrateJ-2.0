@@ -98,6 +98,14 @@ function diaCurto(ymd: string) {
   return `${d}/${m}`
 }
 
+interface Entrevistas {
+  total_video: number
+  total_saida: number
+  saida_respondidas: number
+  por_loja: { empresa: string; cliente: string | null; video: number; saida: number; respondidas: number; total: number }[]
+  por_usuario: { usuario: string; cliente: string | null; video: number; saida: number; total: number }[]
+}
+
 function Cartao({ titulo, valor, detalhe, destaque }: { titulo: string; valor: string | number; detalhe?: string; destaque?: boolean }) {
   return (
     <div className={`rounded-xl border p-4 ${destaque ? 'bg-gradient-to-br from-slate-700 to-teal-600 text-white border-transparent' : 'bg-white'}`}>
@@ -123,6 +131,13 @@ export default async function MasterPage({ searchParams }: { searchParams: Param
   })
 
   const p = bruto as Painel | null
+
+  // Links de entrevista por vídeo e de entrevista de desligamento, por loja e por usuário
+  const { data: brutoEntrevistas } = await supabase.rpc('painel_master_entrevistas', {
+    p_inicio: periodo.inicio,
+    p_fim: periodo.fim,
+  })
+  const ent = brutoEntrevistas as Entrevistas | null
 
   const cancelamentos = (p?.movimentos ?? []).filter((m) => ['cancelamento', 'reembolso', 'fim_de_acesso'].includes(m.evento))
   const vendas = (p?.movimentos ?? []).filter((m) => ['compra', 'renovacao'].includes(m.evento))
@@ -231,6 +246,84 @@ export default async function MasterPage({ searchParams }: { searchParams: Param
                 )}
               </div>
             </section>
+
+            {/* Entrevistas (vídeo) e entrevistas de desligamento */}
+            {ent && (
+              <section className="space-y-4">
+                <h2 className="text-sm font-semibold text-gray-700">Links de entrevista gerados no período</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <Cartao titulo="Entrevistas por vídeo" valor={ent.total_video} detalhe="links enviados a candidatos" destaque />
+                  <Cartao titulo="Entrevistas de desligamento" valor={ent.total_saida} detalhe="links gerados ao desligar" />
+                  <Cartao titulo="Desligamentos respondidos" valor={ent.saida_respondidas} detalhe={ent.total_saida ? `${Math.round((ent.saida_respondidas / ent.total_saida) * 100)}% de resposta` : undefined} />
+                  <Cartao titulo="Total de links de entrevista" valor={ent.total_video + ent.total_saida} />
+                </div>
+                <div className="grid lg:grid-cols-2 gap-4">
+                  <div className="bg-white border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Por loja</h3>
+                    {ent.por_loja.length === 0 ? (
+                      <p className="text-xs text-gray-400">Nenhum link de entrevista neste período.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-left text-gray-500 border-b">
+                              <th className="py-2 pr-3">Loja</th>
+                              <th className="py-2 pr-3 text-center">Vídeo</th>
+                              <th className="py-2 pr-3 text-center">Desligamento</th>
+                              <th className="py-2 pr-3 text-center">Respondidas</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ent.por_loja.map((l, i) => (
+                              <tr key={i} className="border-b last:border-0">
+                                <td className="py-2 pr-3">
+                                  <p className="font-medium">{l.empresa}</p>
+                                  <p className="text-[11px] text-gray-400">{l.cliente ?? '—'}</p>
+                                </td>
+                                <td className="py-2 pr-3 text-center font-semibold text-teal-700">{l.video}</td>
+                                <td className="py-2 pr-3 text-center font-semibold text-teal-700">{l.saida}</td>
+                                <td className="py-2 pr-3 text-center">{l.respondidas}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-white border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Por usuário</h3>
+                    <p className="text-[11px] text-gray-400 mb-3">Quem gerou o link. Os links criados antes desta atualização aparecem como "sem registro".</p>
+                    {ent.por_usuario.length === 0 ? (
+                      <p className="text-xs text-gray-400">Nenhum link de entrevista neste período.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-left text-gray-500 border-b">
+                              <th className="py-2 pr-3">Usuário</th>
+                              <th className="py-2 pr-3 text-center">Vídeo</th>
+                              <th className="py-2 pr-3 text-center">Desligamento</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ent.por_usuario.map((u, i) => (
+                              <tr key={i} className="border-b last:border-0">
+                                <td className="py-2 pr-3">
+                                  <p className="font-medium">{u.usuario.startsWith('Não registrado') ? 'Sem registro (links antigos)' : u.usuario}</p>
+                                  <p className="text-[11px] text-gray-400">Conta: {u.cliente ?? '—'}</p>
+                                </td>
+                                <td className="py-2 pr-3 text-center font-semibold text-teal-700">{u.video}</td>
+                                <td className="py-2 pr-3 text-center font-semibold text-teal-700">{u.saida}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Cancelamentos */}
             <section className="bg-white border rounded-xl p-4">
