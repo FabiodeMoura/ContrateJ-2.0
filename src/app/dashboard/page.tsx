@@ -11,6 +11,7 @@ import FiltroPeriodo from '@/components/FiltroPeriodo'
 import { ParametrosPeriodo, resolverPeriodo, aplicarPeriodo, estaNoPeriodo } from '@/lib/periodo'
 import LogoMarca from '@/components/LogoMarca'
 import { SEGMENTOS_INFO } from '@/lib/segmentos'
+import DashboardEscala from './DashboardEscala'
 
 function tempoRelativo(data: string) {
   const diffMs = Date.now() - new Date(data).getTime()
@@ -26,7 +27,7 @@ function tempoRelativo(data: string) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { empresa?: string } & ParametrosPeriodo
+  searchParams: { empresa?: string; visao?: string; p?: string; m?: string; d?: string; de?: string; ate?: string } & ParametrosPeriodo
 }) {
   const supabase = createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,6 +38,37 @@ export default async function DashboardPage({
   const { data: empresas } = await supabase
     .from('minhas_empresas')
     .select('id, nome_fantasia, segmento_principal')
+
+  // Visão do dashboard: contratação (padrão) ou escala de trabalho
+  const visao = searchParams.visao === 'escala' ? 'escala' : 'contratacao'
+  const seletorVisao = (
+    <div className="inline-flex bg-white border rounded-xl p-1 mb-5 shadow-sm">
+      <Link href={`/dashboard${searchParams.empresa ? `?empresa=${searchParams.empresa}` : ''}`}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${visao === 'contratacao' ? 'bg-teal-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50'}`}>
+        📊 Contratação
+      </Link>
+      <Link href={`/dashboard?visao=escala${searchParams.empresa ? `&empresa=${searchParams.empresa}` : ''}`}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${visao === 'escala' ? 'bg-teal-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50'}`}>
+        🗓️ Escala de trabalho
+      </Link>
+    </div>
+  )
+
+  if (visao === 'escala') {
+    return (
+      <div className="flex min-h-screen bg-gray-50 md:pl-56">
+        <Sidebar ativo="/dashboard" />
+        <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-lg font-semibold mb-5">Dashboard</h1>
+            {seletorVisao}
+          </div>
+          <DashboardEscala supabase={supabase} empresas={(empresas ?? []).map((e) => ({ id: e.id, nome_fantasia: e.nome_fantasia }))} searchParams={searchParams} />
+        </main>
+        <MobileNav />
+      </div>
+    )
+  }
 
   const temVariasEmpresas = (empresas?.length ?? 0) > 1
   const filtroEmpresa = searchParams.empresa ?? (temVariasEmpresas ? 'todas' : empresas?.[0]?.id) ?? 'todas'
@@ -158,6 +190,7 @@ export default async function DashboardPage({
     <div className="flex min-h-screen bg-gray-50 md:pl-56">
       <Sidebar ativo="/dashboard" />
       <main className="flex-1 pt-16 md:pt-8 p-4 md:p-8 pb-8">
+        {seletorVisao}
         {/* Banner */}
         <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-slate-700 via-teal-600 to-lime-400">
           <div className="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10" />

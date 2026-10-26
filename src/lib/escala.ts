@@ -108,7 +108,7 @@ export const MAX_DIAS_INTERVALO = 92
 export interface ParametrosPeriodoEscala { p?: string; m?: string; d?: string; de?: string; ate?: string; mes?: string }
 
 export interface PeriodoEscala {
-  tipo: 'mes' | 'semana' | 'intervalo'
+  tipo: 'dia' | 'mes' | 'semana' | 'intervalo'
   dias: string[]
   rotulo: string
   anterior: Record<string, string>
@@ -136,7 +136,17 @@ function diaBr(dia: string): string {
 
 export function periodoEscala(q: ParametrosPeriodoEscala): PeriodoEscala {
   const hoje = hojeIso()
-  const tipo = q.p === 'semana' || q.p === 'intervalo' ? q.p : 'mes'
+  const tipo = q.p === 'semana' || q.p === 'intervalo' || q.p === 'dia' ? q.p : 'mes'
+
+  if (tipo === 'dia') {
+    const dia = q.d && EH_DIA.test(q.d) ? q.d : hoje
+    return {
+      tipo, dias: [dia], rotulo: `${DIAS_SEMANA[diaDaSemana(dia)]}, ${diaBr(dia)}`,
+      anterior: { p: 'dia', d: somarDias(dia, -1) },
+      proximo: { p: 'dia', d: somarDias(dia, 1) },
+      aviso: null,
+    }
+  }
 
   if (tipo === 'semana') {
     const base = q.d && EH_DIA.test(q.d) ? q.d : hoje
@@ -178,4 +188,23 @@ export function periodoEscala(q: ParametrosPeriodoEscala): PeriodoEscala {
     proximo: { p: 'mes', m: somarMeses(mes, 1) },
     aviso: null,
   }
+}
+
+// ---------- Situação de cada colaborador em cada dia (usado na escala e no dashboard) ----------
+export type Situacao = 'T' | 'F' | 'FA' | 'AT' | 'FE'
+
+export function situacaoDoDia(
+  cfg: Omit<ConfigColab, 'colaborador_id' | 'empresa_id'>,
+  ajuste: boolean | undefined,
+  ocorrencia: Ocorrencia | undefined,
+  dia: string,
+): Situacao {
+  if (ocorrencia) return SIGLA_OCORRENCIA[ocorrencia.tipo] as Situacao
+  const trabalha = ajuste !== undefined ? ajuste : trabalhaPelaJornada(cfg, dia)
+  return trabalha ? 'T' : 'F'
+}
+
+export function configDe(configs: ConfigColab[], colaboradorId: string): Omit<ConfigColab, 'colaborador_id' | 'empresa_id'> {
+  const c = configs.find((x) => x.colaborador_id === colaboradorId)
+  return c ? { ...c, folgas: (c.folgas ?? []).map(Number) } : { ...CONFIG_PADRAO }
 }

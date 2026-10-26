@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { MAX_DIAS_INTERVALO, hojeIso, type PeriodoEscala } from '@/lib/escala'
 
 // Filtro de período da escala: mês, semana ou intervalo de datas (personalizado).
-export default function FiltroPeriodoEscala({ periodo }: { periodo: PeriodoEscala }) {
+export default function FiltroPeriodoEscala({ periodo, destino = '/escala', manter = ['empresa'] }: { periodo: PeriodoEscala; destino?: string; manter?: string[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const hoje = hojeIso()
@@ -13,14 +13,17 @@ export default function FiltroPeriodoEscala({ periodo }: { periodo: PeriodoEscal
 
   function aplicar(novos: Record<string, string>) {
     const params = new URLSearchParams()
-    const empresa = searchParams.get('empresa')
-    if (empresa) params.set('empresa', empresa)
+    manter.forEach((chave) => {
+      const valor = searchParams.get(chave)
+      if (valor) params.set(chave, valor)
+    })
     Object.entries(novos).forEach(([chave, valor]) => params.set(chave, valor))
-    router.push(`/escala?${params.toString()}`)
+    router.push(`${destino}?${params.toString()}`)
   }
 
   function mudarTipo(tipo: string) {
-    if (tipo === 'mes') aplicar({ p: 'mes', m: hoje.slice(0, 7) })
+    if (tipo === 'dia') aplicar({ p: 'dia', d: hoje })
+    else if (tipo === 'mes') aplicar({ p: 'mes', m: hoje.slice(0, 7) })
     else if (tipo === 'semana') aplicar({ p: 'semana', d: hoje })
     else aplicar({ p: 'intervalo', de: inicio, ate: fim })
   }
@@ -31,6 +34,7 @@ export default function FiltroPeriodoEscala({ periodo }: { periodo: PeriodoEscal
     <div className="inline-flex flex-wrap items-center gap-2">
       <span className="text-xs text-gray-500 hidden sm:inline">📅 Período</span>
       <select value={periodo.tipo} onChange={(e) => mudarTipo(e.target.value)} className={campo}>
+        <option value="dia">Dia</option>
         <option value="mes">Mês</option>
         <option value="semana">Semana</option>
         <option value="intervalo">Personalizado</option>
@@ -38,6 +42,10 @@ export default function FiltroPeriodoEscala({ periodo }: { periodo: PeriodoEscal
       {periodo.tipo === 'mes' && (
         <input type="month" className={campo} value={inicio.slice(0, 7)}
           onChange={(e) => e.target.value && aplicar({ p: 'mes', m: e.target.value })} />
+      )}
+      {periodo.tipo === 'dia' && (
+        <input type="date" className={campo} value={inicio}
+          onChange={(e) => e.target.value && aplicar({ p: 'dia', d: e.target.value })} />
       )}
       {periodo.tipo === 'semana' && (
         // Escolhe qualquer dia e a escala mostra a semana inteira (segunda a domingo).
