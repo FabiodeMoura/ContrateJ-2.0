@@ -16,7 +16,8 @@ const SEGMENTOS: Record<
     emoji: '🍽️',
     cor: 'from-orange-400 to-orange-600',
     funcoes: [
-      'Garçom', 'Copeiro', 'Cozinheiro', 'Auxiliar de Cozinha', 'Chapeiro', 'Gerente',
+      'Garçom', 'Atendente', 'Copeiro', 'Cozinheiro', 'Auxiliar de Cozinha', 'Chapeiro',
+      'Assador de frango', 'Saladeiro(a)', 'Pizzaiolo', 'Padeiro', 'Confeiteiro', 'Gerente',
       'Subgerente', 'Supervisor de Operações', 'Caixa', 'Recepcionista',
       'Segurança', 'Motoboy/Entregador', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal',
     ],
@@ -31,13 +32,13 @@ const SEGMENTOS: Record<
     nome: 'Lanchonete',
     emoji: '🍔',
     cor: 'from-yellow-400 to-yellow-600',
-    funcoes: ['Atendente', 'Cozinheiro', 'Chapeiro', 'Salgadeira', 'Salgadeiro', 'Caixa', 'Motoboy/Entregador', 'Gerente', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal'],
+    funcoes: ['Atendente', 'Cozinheiro', 'Auxiliar de Cozinha', 'Chapeiro', 'Assador de frango', 'Salgadeira', 'Salgadeiro', 'Caixa', 'Motoboy/Entregador', 'Gerente', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal'],
   },
   padaria: {
     nome: 'Padaria',
     emoji: '🍞',
     cor: 'from-sky-400 to-sky-600',
-    funcoes: ['Padeiro', 'Confeiteiro', 'Salgadeira', 'Salgadeiro', 'Atendente', 'Caixa', 'Gerente', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal'],
+    funcoes: ['Padeiro', 'Auxiliar de padeiro', 'Confeiteiro', 'Auxiliar de confeitaria', 'Salgadeira', 'Salgadeiro', 'Atendente', 'Caixa', 'Gerente', 'Serviços Gerais', 'Financeiro', 'Analista Fiscal'],
   },
   'sacolão': {
     nome: 'Sacolão',
@@ -62,6 +63,9 @@ const SEGMENTOS: Record<
 const ICONES_FUNCAO: Record<string, string> = {
   'Açougueiro': '🥩',
   'Analista Fiscal': '📊',
+  'Assador de frango': '🍗',
+  'Auxiliar de confeitaria': '🧁',
+  'Auxiliar de padeiro': '🥐',
   'Atendente': '🙋',
   'Atendente/Repositor': '🛒',
   'Auxiliar de Cozinha': '🔪',
@@ -82,6 +86,7 @@ const ICONES_FUNCAO: Record<string, string> = {
   'Salgadeira': '🥟',
   'Salgadeiro': '🥟',
   'Repositor': '📦',
+  'Saladeiro(a)': '🥗',
   'Segurança': '🛡️',
   'Serviços Gerais': '🧹',
   'Subgerente': '🗂️',
